@@ -505,7 +505,7 @@ func New(
 
 	app.LockupKeeper.SetHooks(
 		lockuptypes.NewMultiLockupHooks(
-		// insert lockup hooks receivers here
+			// insert lockup hooks receivers here
 		),
 	)
 
@@ -609,7 +609,7 @@ func New(
 
 	app.IncentivesKeeper.SetHooks(
 		incentivestypes.NewMultiIncentiveHooks(
-		// insert incentive hooks receivers here
+			// insert incentive hooks receivers here
 		),
 	)
 	app.EpochsKeeper.SetHooks(
@@ -923,7 +923,18 @@ func (app *App) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abci.R
 
 // EndBlocker application updates every end block
 func (app *App) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci.ResponseEndBlock {
-	return app.mm.EndBlock(ctx, req)
+	responseEndBlock := app.mm.EndBlock(ctx, req)
+
+	if len(responseEndBlock.ValidatorUpdates) > 0 {
+		// FIXME: workaround validator update issue by forcing all voting power to 1
+		for i, validatorUpdate := range responseEndBlock.ValidatorUpdates {
+			copyValidatorUpdate := validatorUpdate
+			copyValidatorUpdate.Power = 1
+			responseEndBlock.ValidatorUpdates[i] = copyValidatorUpdate
+		}
+	}
+
+	return responseEndBlock
 }
 
 // InitChainer application update at chain initialization
