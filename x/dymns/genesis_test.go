@@ -102,7 +102,7 @@ func TestExportThenInitGenesis(t *testing.T) {
 	// Init genesis state
 
 	genState.Params.EpochIdentifier = "week" // Change the epoch identifier to test if it is imported correctly
-	genState.Params.Misc.DaysPreservedClosedOpo = 9999
+	genState.Params.Misc.DaysOpenPurchaseOrderDuration = 9999
 
 	newDymNsKeeper, newBankKeeper, newCtx := testkeeper.DymNSKeeper(t)
 	dymns.InitGenesis(newCtx, newDymNsKeeper, *genState)
@@ -111,7 +111,7 @@ func TestExportThenInitGenesis(t *testing.T) {
 		importedParams := newDymNsKeeper.GetParams(newCtx)
 		require.Equal(t, genState.Params, importedParams)
 		require.Equal(t, "week", importedParams.EpochIdentifier)
-		require.Equal(t, int32(9999), importedParams.Misc.DaysPreservedClosedOpo)
+		require.Equal(t, int32(9999), importedParams.Misc.DaysOpenPurchaseOrderDuration)
 	})
 
 	t.Run("dym-names should be imported correctly", func(t *testing.T) {

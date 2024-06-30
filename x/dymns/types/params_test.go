@@ -24,14 +24,16 @@ func TestNewParams(t *testing.T) {
 			PriceDenom: "b",
 		},
 		MiscParams{
-			DaysPreservedClosedOpo: 66,
-			GasOpoCrud:             6,
+			DaysOpenPurchaseOrderDuration:    888,
+			DaysPreservedClosedPurchaseOrder: 88,
+			GasCrudOpenPurchaseOrder:         8,
 		},
 	)
 	require.Equal(t, "a", params.EpochIdentifier)
 	require.Equal(t, "b", params.Price.PriceDenom)
-	require.Equal(t, int32(66), params.Misc.DaysPreservedClosedOpo)
-	require.Equal(t, int32(6), params.Misc.GasOpoCrud)
+	require.Equal(t, int32(888), params.Misc.DaysOpenPurchaseOrderDuration)
+	require.Equal(t, int32(88), params.Misc.DaysPreservedClosedPurchaseOrder)
+	require.Equal(t, int32(8), params.Misc.GasCrudOpenPurchaseOrder)
 }
 
 func TestDefaultPriceParams(t *testing.T) {
@@ -60,7 +62,7 @@ func TestParams_Validate(t *testing.T) {
 	require.Error(t, (&params).Validate())
 
 	params = DefaultParams()
-	params.Misc.DaysPreservedClosedOpo = 0
+	params.Misc.DaysPreservedClosedPurchaseOrder = 0
 	require.Error(t, (&params).Validate())
 }
 
@@ -162,19 +164,75 @@ func TestPriceParams_Validate(t *testing.T) {
 }
 
 func TestMiscParams_Validate(t *testing.T) {
-	t.Run("days preserved closed OPO can not be zero", func(t *testing.T) {
-		require.Error(t, MiscParams{DaysPreservedClosedOpo: 0}.Validate())
-		require.Error(t, MiscParams{DaysPreservedClosedOpo: -1}.Validate())
-	})
-
-	t.Run("validate gas opo crud", func(t *testing.T) {
-		err := MiscParams{
-			DaysPreservedClosedOpo: 1,
-			GasOpoCrud:             -1,
-		}.Validate()
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "cannot be negative")
-	})
+	var tests = []struct {
+		name            string
+		modifier        func(MiscParams) MiscParams
+		wantErr         bool
+		wantErrContains string
+	}{
+		{
+			name:     "valid",
+			modifier: func(p MiscParams) MiscParams { return p },
+		},
+		{
+			name: "all = 1 is valid",
+			modifier: func(p MiscParams) MiscParams {
+				p.DaysOpenPurchaseOrderDuration = 1
+				p.DaysPreservedClosedPurchaseOrder = 1
+				p.GasCrudOpenPurchaseOrder = 1
+				return p
+			},
+		},
+		{
+			name: "gas for CRUD = 0 is valid",
+			modifier: func(p MiscParams) MiscParams {
+				p.GasCrudOpenPurchaseOrder = 0
+				return p
+			},
+		},
+		{
+			name:            "days OPO duration can not be zero",
+			modifier:        func(p MiscParams) MiscParams { p.DaysOpenPurchaseOrderDuration = 0; return p },
+			wantErr:         true,
+			wantErrContains: "days OPO duration must be greater than 0",
+		},
+		{
+			name:            "days OPO duration can not be negative",
+			modifier:        func(p MiscParams) MiscParams { p.DaysOpenPurchaseOrderDuration = -1; return p },
+			wantErr:         true,
+			wantErrContains: "days OPO duration must be greater than 0",
+		},
+		{
+			name:            "days preserved closed OPO duration can not be zero",
+			modifier:        func(p MiscParams) MiscParams { p.DaysPreservedClosedPurchaseOrder = 0; return p },
+			wantErr:         true,
+			wantErrContains: "days preserved closed OPO must be greater than 0",
+		},
+		{
+			name:            "days preserved closed OPO duration can not be negative",
+			modifier:        func(p MiscParams) MiscParams { p.DaysPreservedClosedPurchaseOrder = -1; return p },
+			wantErr:         true,
+			wantErrContains: "days preserved closed OPO must be greater than 0",
+		},
+		{
+			name:            "gas CRUD OPO can not be negative",
+			modifier:        func(p MiscParams) MiscParams { p.GasCrudOpenPurchaseOrder = -1; return p },
+			wantErr:         true,
+			wantErrContains: "gas for CRUD operations on OPO cannot be negative",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.modifier(DefaultMiscParams()).Validate()
+			if tt.wantErr {
+				require.NotEmpty(t, tt.wantErrContains, "mis-configured test case")
+				require.Error(t, err)
+				require.Contains(t, err.Error(), tt.wantErrContains)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
 
 	t.Run("invalid type", func(t *testing.T) {
 		require.Error(t, validateMiscParams("hello world"))

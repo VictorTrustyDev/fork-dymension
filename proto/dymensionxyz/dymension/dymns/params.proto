@@ -66,10 +66,15 @@ message PriceParams {
 }
 
 message MiscParams {
+  // Number of days of an OPO from created to expired.
+  int32 days_open_purchase_order_duration = 1 [
+    (gogoproto.moretags) = "yaml:\"days_open_purchase_order_duration\""
+  ];
+
   // Number of days to keep history version of closed OPO before it is deleted,
   // based on expiry date and block time.
-  int32 days_preserved_closed_opo = 1 [
-    (gogoproto.moretags) = "yaml:\"days_preserved_closed_opo\""
+  int32 days_preserved_closed_purchase_order = 2 [
+    (gogoproto.moretags) = "yaml:\"days_preserved_closed_purchase_order\""
   ];
 
   // Number of gas to be charged for CRUD operations on OPOs.
@@ -77,7 +82,7 @@ message MiscParams {
   // - Create operation is when owner create an OPO to sell a Dym-Name.
   // - Update operation is when user place bid on an OPO.
   // - Delete operation is when owner close an OPO.
-  int32 gas_opo_crud = 2 [
-    (gogoproto.moretags) = "yaml:\"gas_opo_crud\""
+  int32 gas_crud_open_purchase_order = 3 [
+    (gogoproto.moretags) = "yaml:\"gas_crud_open_purchase_order\""
   ];
 }

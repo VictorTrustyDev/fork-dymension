@@ -49,8 +49,12 @@ func DefaultPriceParams() PriceParams {
 
 func DefaultMiscParams() MiscParams {
 	return MiscParams{
-		DaysPreservedClosedOpo: 7,
-		GasOpoCrud:             5_000_000,
+		// TODO DymNS: add days when create new OPO
+		DaysOpenPurchaseOrderDuration: 3,
+		// TODO DymNS: prune historical data
+		DaysPreservedClosedPurchaseOrder: 7,
+		// TODO DymNS: add gas for CRUD operations on OPO
+		GasCrudOpenPurchaseOrder: 5_000_000,
 	}
 }
 
@@ -179,11 +183,15 @@ func validateMiscParams(i interface{}) error {
 		return fmt.Errorf("invalid parameter type: %T", i)
 	}
 
-	if m.DaysPreservedClosedOpo < 1 {
+	if m.DaysOpenPurchaseOrderDuration < 1 {
+		return ErrValidationFailed.Wrap("days OPO duration must be greater than 0")
+	}
+
+	if m.DaysPreservedClosedPurchaseOrder < 1 {
 		return ErrValidationFailed.Wrap("days preserved closed OPO must be greater than 0")
 	}
 
-	if m.GasOpoCrud < 0 {
+	if m.GasCrudOpenPurchaseOrder < 0 {
 		return ErrValidationFailed.Wrap("gas for CRUD operations on OPO cannot be negative")
 	}
 
