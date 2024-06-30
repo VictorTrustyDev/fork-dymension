@@ -1,0 +1,19 @@
+syntax = "proto3";
+package dymensionxyz.dymension.dymns;
+
+// import "gogoproto/gogo.proto";
+// import "google/api/annotations.proto";
+// import "cosmos/base/query/v1beta1/pagination.proto";
+
+option go_package = "github.com/dymensionxyz/dymension/v3/x/dymns/types";
+
+// Query defines the gRPC querier service.
+service Query {
+  // TODO DymNS: query Dym-Names owned by specific address
+
+  // TODO DymNS: query OPOs of Dym-Names owned by specific address
+
+  // TODO DymNS: query OPO of a Dym-Name
+
+  // TODO DymNS: resolve Dym-Name to Address
+}

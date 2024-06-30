@@ -1,0 +1,83 @@
+syntax = "proto3";
+package dymensionxyz.dymension.dymns;
+
+import "gogoproto/gogo.proto";
+import "cosmos/base/v1beta1/coin.proto";
+
+option go_package = "github.com/dymensionxyz/dymension/v3/x/dymns/types";
+
+// Params defines the parameters for the module.
+message Params {
+  string epoch_identifier = 1 [
+    (gogoproto.moretags) = "yaml:\"epoch_identifier\""
+  ];
+
+  PriceParams price = 2 [
+    (gogoproto.moretags) = "yaml:\"price\"",
+    (gogoproto.nullable) = false
+  ];
+
+  MiscParams misc = 3 [
+    (gogoproto.moretags) = "yaml:\"misc\"",
+    (gogoproto.nullable) = false
+  ];
+}
+
+message PriceParams {
+  // Price of 1 letter Dym-Name
+  string price_1_letter = 1 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.moretags) = "yaml:\"price_1_letter\"",
+    (gogoproto.nullable) = false
+  ];
+
+  // Price of 2 letters Dym-Name
+  string price_2_letters = 2 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.moretags) = "yaml:\"price_2_letters\"",
+    (gogoproto.nullable) = false
+  ];
+
+  // Price of 3 letters Dym-Name
+  string price_3_letters = 3 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.moretags) = "yaml:\"price_3_letters\"",
+    (gogoproto.nullable) = false
+  ];
+
+  // Price of 4 letters Dym-Name
+  string price_4_letters = 4 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.moretags) = "yaml:\"price_4_letters\"",
+    (gogoproto.nullable) = false
+  ];
+
+  // Price of 5+ letters Dym-Name
+  string price_5plus_letters = 5 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.moretags) = "yaml:\"price_5plus_letters\"",
+    (gogoproto.nullable) = false
+  ];
+
+  // Denom of the price setup
+  string price_denom = 6 [
+    (gogoproto.moretags) = "yaml:\"price_denom\""
+  ];
+}
+
+message MiscParams {
+  // Number of days to keep history version of closed OPO before it is deleted,
+  // based on expiry date and block time.
+  int32 days_preserved_closed_opo = 1 [
+    (gogoproto.moretags) = "yaml:\"days_preserved_closed_opo\""
+  ];
+
+  // Number of gas to be charged for CRUD operations on OPOs.
+  // Note:
+  // - Create operation is when owner create an OPO to sell a Dym-Name.
+  // - Update operation is when user place bid on an OPO.
+  // - Delete operation is when owner close an OPO.
+  int32 gas_opo_crud = 2 [
+    (gogoproto.moretags) = "yaml:\"gas_opo_crud\""
+  ];
+}
