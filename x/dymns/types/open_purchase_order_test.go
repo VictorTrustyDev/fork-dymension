@@ -1,12 +1,21 @@
 package types
 
 import (
+	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/dymensionxyz/dymension/v3/app/params"
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
 )
+
+func TestOpenPurchaseOrder_Identity(t *testing.T) {
+	m := &OpenPurchaseOrder{
+		Name:     "aabb",
+		ExpireAt: 1234,
+	}
+	require.Equal(t, "aabb|1234", m.Identity())
+}
 
 func TestOpenPurchaseOrder_HasSetSellPrice(t *testing.T) {
 	require.False(t, (&OpenPurchaseOrder{
@@ -18,6 +27,33 @@ func TestOpenPurchaseOrder_HasSetSellPrice(t *testing.T) {
 	require.True(t, (&OpenPurchaseOrder{
 		SellPrice: sdk.NewCoin("adym", sdk.OneInt()),
 	}).HasSetSellPrice())
+}
+
+func TestOpenPurchaseOrder_HasExpiredAtCtx(t *testing.T) {
+	var epoch int64 = 2
+	ctx := sdk.Context{}.WithBlockHeader(tmproto.Header{Time: time.Unix(2, 0)})
+	require.True(t, (&OpenPurchaseOrder{
+		ExpireAt: epoch - 1,
+	}).HasExpiredAtCtx(ctx))
+	require.False(t, (&OpenPurchaseOrder{
+		ExpireAt: epoch + 1,
+	}).HasExpiredAtCtx(ctx))
+	require.False(t, (&OpenPurchaseOrder{
+		ExpireAt: epoch,
+	}).HasExpiredAtCtx(ctx), "OPO expires after expires at")
+}
+
+func TestOpenPurchaseOrder_HasExpired(t *testing.T) {
+	var epoch int64 = 2
+	require.True(t, (&OpenPurchaseOrder{
+		ExpireAt: epoch - 1,
+	}).HasExpired(epoch))
+	require.False(t, (&OpenPurchaseOrder{
+		ExpireAt: epoch + 1,
+	}).HasExpired(epoch))
+	require.False(t, (&OpenPurchaseOrder{
+		ExpireAt: epoch,
+	}).HasExpired(epoch), "OPO expires after expires at")
 }
 
 func TestOpenPurchaseOrder_Validate(t *testing.T) {
@@ -290,6 +326,111 @@ func TestOpenPurchaseOrderBid_Validate(t *testing.T) {
 				Bidder: tt.Bidder,
 				Price:  tt.Price,
 			}
+			err := m.Validate()
+			if tt.wantErr {
+				require.NotEmpty(t, tt.wantErrContains, "mis-configured test case")
+				require.Error(t, err)
+				require.Contains(t, err.Error(), tt.wantErrContains)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestHistoricalOpenPurchaseOrders_Validate(t *testing.T) {
+	t.Run("nil obj", func(t *testing.T) {
+		m := (*HistoricalOpenPurchaseOrders)(nil)
+		require.Error(t, m.Validate())
+	})
+
+	tests := []struct {
+		name               string
+		OpenPurchaseOrders []OpenPurchaseOrder
+		wantErr            bool
+		wantErrContains    string
+	}{
+		{
+			name: "valid",
+			OpenPurchaseOrders: []OpenPurchaseOrder{
+				{
+					Name:      "a",
+					ExpireAt:  1,
+					MinPrice:  sdk.NewCoin(params.BaseDenom, sdk.OneInt()),
+					SellPrice: sdk.NewCoin(params.BaseDenom, sdk.OneInt()),
+				},
+				{
+					Name:     "a",
+					ExpireAt: 2,
+					MinPrice: sdk.NewCoin(params.BaseDenom, sdk.OneInt()),
+				},
+			},
+		},
+		{
+			name:               "allow empty",
+			OpenPurchaseOrders: []OpenPurchaseOrder{},
+		},
+		{
+			name: "reject if OPO element is invalid",
+			OpenPurchaseOrders: []OpenPurchaseOrder{
+				{
+					Name:     "a",
+					ExpireAt: 1,
+					MinPrice: sdk.NewCoin(params.BaseDenom, sdk.ZeroInt()), // invalid
+				},
+				{
+					Name:     "a",
+					ExpireAt: 2,
+					MinPrice: sdk.NewCoin(params.BaseDenom, sdk.OneInt()),
+				},
+			},
+			wantErr:         true,
+			wantErrContains: "OPO min price is zero",
+		},
+		{
+			name: "reject if duplicated OPO",
+			OpenPurchaseOrders: []OpenPurchaseOrder{
+				{
+					Name:      "a",
+					ExpireAt:  1,
+					MinPrice:  sdk.NewCoin(params.BaseDenom, sdk.OneInt()),
+					SellPrice: sdk.NewCoin(params.BaseDenom, sdk.OneInt()),
+				},
+				{
+					Name:      "a",
+					ExpireAt:  1,
+					MinPrice:  sdk.NewCoin(params.BaseDenom, sdk.OneInt()),
+					SellPrice: sdk.NewCoin(params.BaseDenom, sdk.OneInt()),
+				},
+			},
+			wantErr:         true,
+			wantErrContains: "historical OPO is not unique",
+		},
+		{
+			name: "reject if OPO element has different Dym-Name",
+			OpenPurchaseOrders: []OpenPurchaseOrder{
+				{
+					Name:      "aaa",
+					ExpireAt:  1,
+					MinPrice:  sdk.NewCoin(params.BaseDenom, sdk.OneInt()),
+					SellPrice: sdk.NewCoin(params.BaseDenom, sdk.OneInt()),
+				},
+				{
+					Name:     "bbb",
+					ExpireAt: 2,
+					MinPrice: sdk.NewCoin(params.BaseDenom, sdk.OneInt()),
+				},
+			},
+			wantErr:         true,
+			wantErrContains: "historical OPOs have different Dym-Name",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := &HistoricalOpenPurchaseOrders{
+				OpenPurchaseOrders: tt.OpenPurchaseOrders,
+			}
+
 			err := m.Validate()
 			if tt.wantErr {
 				require.NotEmpty(t, tt.wantErrContains, "mis-configured test case")

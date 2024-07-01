@@ -14,7 +14,7 @@ option go_package = "github.com/dymensionxyz/dymension/v3/x/dymns/types";
 // OpenPurchaseOrder defines a purchase order for a Dym-Name.
 // After expiry date, if no one has placed a bid, this OPO will be closed, no change.
 // If there is a bid, the highest bid will win.
-// OPO will be deleted after completed, no matter reason.
+// OPO will be moved to historical records after completed, no matter reason.
 message OpenPurchaseOrder {
   // The name of the Dym-Name being opened to purchase.
   string name = 1;
@@ -39,4 +39,9 @@ message OpenPurchaseOrderBid {
 
   // The price set by the bidder.
   cosmos.base.v1beta1.Coin price = 2 [(gogoproto.nullable) = false];
+}
+
+message HistoricalOpenPurchaseOrders {
+  // List of closed OPOs of the same Dym-Name.
+  repeated OpenPurchaseOrder open_purchase_orders = 1 [(gogoproto.nullable) = false];
 }

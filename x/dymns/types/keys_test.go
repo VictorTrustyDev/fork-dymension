@@ -6,6 +6,15 @@ import (
 	"testing"
 )
 
+func TestStorePrefixes(t *testing.T) {
+	t.Run("ensure key prefixes are not mistakenly modified", func(t *testing.T) {
+		require.Equal(t, []byte{0x01}, KeyPrefixDymName)
+		require.Equal(t, []byte{0x02}, KeyPrefixDymNameOwnedByAccount)
+		require.Equal(t, []byte{0x03}, KeyPrefixOpenPurchaseOrder)
+		require.Equal(t, []byte{0x04}, KeyPrefixHistoricalOpenPurchaseOrders)
+	})
+}
+
 func TestDymNameKey(t *testing.T) {
 	//goland:noinspection ALL
 	tests := []struct {

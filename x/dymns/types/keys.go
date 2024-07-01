@@ -23,13 +23,15 @@ const (
 const (
 	prefixDymName = iota + 1
 	prefixDymNameOwnedByAccount
-	prefixOpenPurchaseOrderDymNameByDymName
+	prefixOpenPurchaseOrder
+	prefixHistoricalOpenPurchaseOrders
 )
 
 var (
-	KeyPrefixDymName                    = []byte{prefixDymName}
-	KeyPrefixDymNameOwnedByAccount      = []byte{prefixDymNameOwnedByAccount}
-	KeyPrefixOpenPurchaseOrderByDymName = []byte{prefixOpenPurchaseOrderDymNameByDymName}
+	KeyPrefixDymName                      = []byte{prefixDymName}
+	KeyPrefixDymNameOwnedByAccount        = []byte{prefixDymNameOwnedByAccount}
+	KeyPrefixOpenPurchaseOrder            = []byte{prefixOpenPurchaseOrder}
+	KeyPrefixHistoricalOpenPurchaseOrders = []byte{prefixHistoricalOpenPurchaseOrders}
 )
 
 // DymNameKey returns a key for specific Dym-Name
@@ -44,5 +46,10 @@ func DymNamesOwnedByAccountKey(owner sdk.AccAddress) []byte {
 
 // OpenPurchaseOrderKey returns a key for open purchase order for a Dym-Name
 func OpenPurchaseOrderKey(dymName string) []byte {
-	return append(KeyPrefixOpenPurchaseOrderByDymName, crypto.Keccak256([]byte(dymName))...)
+	return append(KeyPrefixOpenPurchaseOrder, crypto.Keccak256([]byte(dymName))...)
+}
+
+// HistoricalOpenPurchaseOrdersKey returns a key for historical open purchase orders for a Dym-Name
+func HistoricalOpenPurchaseOrdersKey(dymName string) []byte {
+	return append(KeyPrefixHistoricalOpenPurchaseOrders, crypto.Keccak256([]byte(dymName))...)
 }

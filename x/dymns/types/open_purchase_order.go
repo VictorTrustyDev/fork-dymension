@@ -6,8 +6,22 @@ import (
 	dymnsutils "github.com/dymensionxyz/dymension/v3/x/dymns/utils"
 )
 
+// Identity returns the unique identity of the OPO
+func (m *OpenPurchaseOrder) Identity() string {
+	return fmt.Sprintf("%s|%d", m.Name, m.ExpireAt)
+}
+
+// HasSetSellPrice returns true if the sell price is set
 func (m *OpenPurchaseOrder) HasSetSellPrice() bool {
 	return !m.SellPrice.Amount.IsNil() && !m.SellPrice.IsZero()
+}
+
+func (m *OpenPurchaseOrder) HasExpiredAtCtx(ctx sdk.Context) bool {
+	return m.HasExpired(ctx.BlockTime().Unix())
+}
+
+func (m *OpenPurchaseOrder) HasExpired(epochUtcSeconds int64) bool {
+	return m.ExpireAt < epochUtcSeconds
 }
 
 func (m *OpenPurchaseOrder) Validate() error {
@@ -81,6 +95,33 @@ func (m *OpenPurchaseOrderBid) Validate() error {
 		return ErrValidationFailed.Wrap("OPO bid price is negative")
 	} else if err := m.Price.Validate(); err != nil {
 		return ErrValidationFailed.Wrapf("OPO bid price is invalid: %v", err)
+	}
+
+	return nil
+}
+
+func (m *HistoricalOpenPurchaseOrders) Validate() error {
+	if m == nil {
+		return ErrValidationFailed.Wrap("historical OPOs is nil")
+	}
+
+	if len(m.OpenPurchaseOrders) > 0 {
+		name := m.OpenPurchaseOrders[0].Name
+		var uniqueIdentity = make(map[string]bool)
+		for _, opo := range m.OpenPurchaseOrders {
+			if err := opo.Validate(); err != nil {
+				return err
+			}
+
+			if opo.Name != name {
+				return ErrValidationFailed.Wrapf("historical OPOs have different Dym-Name, expected only %s but got %s", name, opo.Name)
+			}
+
+			if _, duplicated := uniqueIdentity[opo.Identity()]; duplicated {
+				return ErrValidationFailed.Wrapf("historical OPO is not unique: %s", opo.Identity())
+			}
+			uniqueIdentity[opo.Identity()] = true
+		}
 	}
 
 	return nil
