@@ -36,13 +36,14 @@ func DefaultParams() Params {
 	return NewParams(defaultEpochIdentifier, DefaultPriceParams(), DefaultMiscParams())
 }
 
+// DefaultPriceParams returns a default set of price parameters
 func DefaultPriceParams() PriceParams {
 	return PriceParams{
-		Price_1Letter:      sdk.NewInt(5000).MulRaw(1e18),
-		Price_2Letters:     sdk.NewInt(2500).MulRaw(1e18),
-		Price_3Letters:     sdk.NewInt(1000).MulRaw(1e18),
-		Price_4Letters:     sdk.NewInt(100).MulRaw(1e18),
-		Price_5PlusLetters: sdk.NewInt(3).MulRaw(1e18),
+		Price_1Letter:      sdk.NewInt(5000 /* DYM */).MulRaw(1e18),
+		Price_2Letters:     sdk.NewInt(2500 /* DYM */).MulRaw(1e18),
+		Price_3Letters:     sdk.NewInt(1000 /* DYM */).MulRaw(1e18),
+		Price_4Letters:     sdk.NewInt(100 /* DYM */).MulRaw(1e18),
+		Price_5PlusLetters: sdk.NewInt(3 /* DYM */).MulRaw(1e18),
 		PriceDenom:         params.BaseDenom,
 	}
 }

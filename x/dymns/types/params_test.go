@@ -37,7 +37,22 @@ func TestNewParams(t *testing.T) {
 }
 
 func TestDefaultPriceParams(t *testing.T) {
-	require.NoError(t, DefaultPriceParams().Validate())
+	priceParams := DefaultPriceParams()
+	require.NoError(t, priceParams.Validate())
+
+	t.Run("ensure setting is correct", func(t *testing.T) {
+		i, ok := sdk.NewIntFromString("3" + "000000000000000000")
+		require.True(t, ok)
+		require.Equal(t, i, priceParams.Price_5PlusLetters)
+	})
+
+	t.Run("ensure price setting is at least 1 DYM", func(t *testing.T) {
+		oneDym, ok := sdk.NewIntFromString("1" + "000000000000000000")
+		require.True(t, ok)
+		if oneDym.GT(priceParams.Price_5PlusLetters) {
+			require.Fail(t, "price should be at least 1 DYM")
+		}
+	})
 }
 
 func TestDefaultMiscParams(t *testing.T) {
