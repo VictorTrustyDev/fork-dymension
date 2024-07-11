@@ -1,0 +1,128 @@
+syntax = "proto3";
+package dymensionxyz.dymension.dymns;
+
+import "gogoproto/gogo.proto";
+import "cosmos/base/v1beta1/coin.proto";
+
+option go_package = "github.com/dymensionxyz/dymension/v3/x/dymns/types";
+
+// Params defines the parameters for the module.
+message Params {
+  PriceParams price = 1 [
+    (gogoproto.moretags) = "yaml:\"price\"",
+    (gogoproto.nullable) = false
+  ];
+
+  AliasParams alias = 2 [
+    (gogoproto.moretags) = "yaml:\"alias\"",
+    (gogoproto.nullable) = false
+  ];
+
+  MiscParams misc = 3 [
+    (gogoproto.moretags) = "yaml:\"misc\"",
+    (gogoproto.nullable) = false
+  ];
+}
+
+message PriceParams {
+  // Price of 1 letter Dym-Name, apply to first year
+  string price_1_letter = 1 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.moretags) = "yaml:\"price_1_letter\"",
+    (gogoproto.nullable) = false
+  ];
+
+  // Price of 2 letters Dym-Name, apply to first year
+  string price_2_letters = 2 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.moretags) = "yaml:\"price_2_letters\"",
+    (gogoproto.nullable) = false
+  ];
+
+  // Price of 3 letters Dym-Name, apply to first year
+  string price_3_letters = 3 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.moretags) = "yaml:\"price_3_letters\"",
+    (gogoproto.nullable) = false
+  ];
+
+  // Price of 4 letters Dym-Name, apply to first year
+  string price_4_letters = 4 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.moretags) = "yaml:\"price_4_letters\"",
+    (gogoproto.nullable) = false
+  ];
+
+  // Price of 5+ letters Dym-Name, apply to first year
+  string price_5plus_letters = 5 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.moretags) = "yaml:\"price_5plus_letters\"",
+    (gogoproto.nullable) = false
+  ];
+
+  // Price extends yearly, after first year
+  string price_extends = 6 [
+    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.moretags) = "yaml:\"price_extends\"",
+    (gogoproto.nullable) = false
+  ];
+
+  // Denom of the price setup
+  string price_denom = 7 [
+    (gogoproto.moretags) = "yaml:\"price_denom\""
+  ];
+}
+
+message AliasParams {
+  map<string, AliasesOfChainId> by_chain_id = 1 [
+    (gogoproto.moretags) = "yaml:\"by_chain_id\"",
+    (gogoproto.nullable) = false
+  ];
+}
+
+// AliasesOfChainId defines the multiple-aliases of a chain id.
+message AliasesOfChainId {
+  repeated string aliases = 1 [
+    (gogoproto.moretags) = "yaml:\"aliases\""
+  ];
+}
+
+message MiscParams {
+  string begin_epoch_hook_identifier = 1 [
+    (gogoproto.moretags) = "yaml:\"begin_epoch_hook_identifier\""
+  ];
+
+  string end_epoch_hook_identifier = 2 [
+    (gogoproto.moretags) = "yaml:\"end_epoch_hook_identifier\""
+  ];
+
+  // Number of days that the former owner of an expired Dym-Name can renew it before completely lost.
+  int32 days_grace_period = 3 [
+    (gogoproto.moretags) = "yaml:\"days_grace_period\""
+  ];
+
+  // Number of days of an OPO from created to expired.
+  int32 days_open_purchase_order_duration = 4 [
+    (gogoproto.moretags) = "yaml:\"days_open_purchase_order_duration\""
+  ];
+
+  // Number of days to keep history version of closed OPO before it is deleted,
+  // based on expiry date and block time.
+  int32 days_preserved_closed_purchase_order = 5 [
+    (gogoproto.moretags) = "yaml:\"days_preserved_closed_purchase_order\""
+  ];
+
+  // Number of days, if the OPO expiry date enter the range before expiry of Dym-Name, the OPO can not be placed.
+  int32 days_prohibit_sell = 6 [
+    (gogoproto.moretags) = "yaml:\"days_prohibit_sell\""
+  ];
+
+  // Number of gas to be charged for CRUD operations on OPOs.
+  // Note:
+  // - Create operation is when owner create an OPO to sell a Dym-Name.
+  // - Update operation is when user place bid on an OPO.
+  // - Delete operation is when owner close an OPO.
+  int32 gas_crud_open_purchase_order = 7 [
+    (gogoproto.moretags) = "yaml:\"gas_crud_open_purchase_order\""
+  ];
+}

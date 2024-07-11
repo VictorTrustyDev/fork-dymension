@@ -1,0 +1,37 @@
+package types
+
+import (
+	"github.com/cosmos/cosmos-sdk/codec"
+	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/msgservice"
+)
+
+func RegisterCodec(cdc *codec.LegacyAmino) {
+	cdc.RegisterConcrete(&MsgRegisterName{}, "dymns/RegisterName", nil)
+	cdc.RegisterConcrete(&MsgTransferOwnership{}, "dymns/TransferOwnership", nil)
+	cdc.RegisterConcrete(&MsgSetController{}, "dymns/SetController", nil)
+	cdc.RegisterConcrete(&MsgUpdateResolveAddress{}, "dymns/UpdateResolveAddress", nil)
+	cdc.RegisterConcrete(&MsgPutAdsSellName{}, "dymns/PutAdsSellName", nil)
+	cdc.RegisterConcrete(&MsgCancelAdsSellName{}, "dymns/CancelAdsSellName", nil)
+	cdc.RegisterConcrete(&MsgPurchaseName{}, "dymns/PurchaseName", nil)
+}
+
+func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
+	registry.RegisterImplementations(
+		(*sdk.Msg)(nil),
+		&MsgRegisterName{},
+		&MsgTransferOwnership{},
+		&MsgSetController{},
+		&MsgUpdateResolveAddress{},
+		&MsgPutAdsSellName{},
+		&MsgCancelAdsSellName{},
+		&MsgPurchaseName{},
+	)
+	msgservice.RegisterMsgServiceDesc(registry, &_Msg_serviceDesc)
+}
+
+var (
+	Amino     = codec.NewLegacyAmino()
+	ModuleCdc = codec.NewProtoCodec(cdctypes.NewInterfaceRegistry())
+)

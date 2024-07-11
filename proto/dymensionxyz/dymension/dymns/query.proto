@@ -1,0 +1,124 @@
+syntax = "proto3";
+package dymensionxyz.dymension.dymns;
+
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+import "dymensionxyz/dymension/dymns/params.proto";
+import "dymensionxyz/dymension/dymns/dym_name.proto";
+import "dymensionxyz/dymension/dymns/open_purchase_order.proto";
+
+option go_package = "github.com/dymensionxyz/dymension/v3/x/dymns/types";
+
+// Query defines the gRPC querier service.
+service Query {
+  // Parameters queries the parameters of the module.
+  rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
+    option (google.api.http).get = "/dymensionxyz/dymension/dymns/params";
+  }
+
+  // DymName queries a Dym-Name by its name.
+  rpc DymName(QueryDymNameRequest) returns (QueryDymNameResponse) {
+    option (google.api.http).get = "/dymensionxyz/dymension/dymns/dym_name/{dym_name}";
+  }
+
+  // ResolveDymNameAddresses resolves multiple Dym-Name Addresses to account addresses.
+  rpc ResolveDymNameAddresses(QueryResolveDymNameAddressesRequest) returns (QueryResolveDymNameAddressesResponse) {
+    option (google.api.http).get = "/dymensionxyz/dymension/dymns/resolve";
+  }
+
+  // DymNamesOwnedByAccount queries the Dym-Names owned by an account.
+  rpc DymNamesOwnedByAccount(QueryDymNamesOwnedByAccountRequest) returns (QueryDymNamesOwnedByAccountResponse) {
+    option (google.api.http).get = "/dymensionxyz/dymension/dymns/owned_by/{owner}";
+  }
+
+  // OpenPurchaseOrder queries the active OPO of a Dym-Name.
+  rpc OpenPurchaseOrder(QueryOpenPurchaseOrderRequest) returns (QueryOpenPurchaseOrderResponse) {
+    option (google.api.http).get = "/dymensionxyz/dymension/dymns/open_purchase_order/{dym_name}";
+  }
+
+  // HistoricalPurchaseOrder queries the historical OPOs of a Dym-Name.
+  rpc HistoricalPurchaseOrder(QueryHistoricalPurchaseOrderRequest) returns (QueryHistoricalPurchaseOrderResponse) {
+    option (google.api.http).get = "/dymensionxyz/dymension/dymns/historical_purchase_order/{dym_name}";
+  }
+}
+
+// QueryParamsRequest is request type for the Query/Params RPC method.
+message QueryParamsRequest {}
+
+// QueryParamsResponse is response type for the Query/Params RPC method.
+message QueryParamsResponse {
+  // params holds all the parameters of this module.
+  Params params = 1 [(gogoproto.nullable) = false];
+}
+
+// QueryDymNameRequest is the request type for the Query/DymName RPC method.
+message QueryDymNameRequest {
+  option (gogoproto.equal)           = false;
+
+  string dym_name = 1;
+}
+
+// QueryDymNameResponse is the response type for the Query/DymName RPC method.
+message QueryDymNameResponse {
+  DymName dym_name = 1;
+}
+
+// QueryResolveDymNameAddressesRequest is the request type for the Query/ResolveDymNameAddresses RPC method.
+message QueryResolveDymNameAddressesRequest {
+  option (gogoproto.equal)           = false;
+
+  repeated string addresses = 1;
+}
+
+message ResultDymNameAddress {
+  string address = 1;
+  string resolved_address = 2;
+  string error = 3;
+}
+
+// QueryResolveDymNameAddressesResponse is the response type for the Query/ResolveDymNameAddresses RPC method.
+message QueryResolveDymNameAddressesResponse {
+  repeated ResultDymNameAddress resolved_addresses = 1 [(gogoproto.nullable) = false];
+}
+
+// QueryDymNamesOwnedByAccountRequest is the request type for the Query/DymNamesOwnedByAccount RPC method.
+message QueryDymNamesOwnedByAccountRequest {
+  option (gogoproto.equal)           = false;
+
+  // owner defines the address of the owner of the Dym-Names to query for.
+  string owner = 1;
+}
+
+//  QueryDymNamesOwnedByAccountResponse is the response type for the Query/DymNamesOwnedByAccount RPC method.
+message QueryDymNamesOwnedByAccountResponse {
+  // dym_names defines the Dym-Names owned by the account.
+  repeated DymName dym_names = 1 [(gogoproto.nullable) = false];
+}
+
+// QueryOpenPurchaseOrderRequest is the request type for the Query/OpenPurchaseOrder RPC method.
+message QueryOpenPurchaseOrderRequest {
+  option (gogoproto.equal)           = false;
+
+  // dym_name is the Dym-Name to query the active OPO for.
+  string dym_name = 1;
+}
+
+// QueryOpenPurchaseOrderResponse is the response type for the Query/OpenPurchaseOrder RPC method.
+message QueryOpenPurchaseOrderResponse {
+  // result is the active OPO for the Dym-Name.
+  OpenPurchaseOrder result = 1 [(gogoproto.nullable) = false];
+}
+
+// QueryHistoricalPurchaseOrderRequest is the request type for the Query/HistoricalPurchaseOrder RPC method.
+message QueryHistoricalPurchaseOrderRequest {
+  option (gogoproto.equal)           = false;
+
+  // dym_name is the Dym-Name to query the historical OPO for.
+  string dym_name = 1;
+}
+
+// QueryHistoricalPurchaseOrderResponse is the response type for the Query/HistoricalPurchaseOrder RPC method.
+message QueryHistoricalPurchaseOrderResponse {
+  // result defines the historical OPOs of the Dym-Name.
+  repeated OpenPurchaseOrder result = 1 [(gogoproto.nullable) = false];
+}

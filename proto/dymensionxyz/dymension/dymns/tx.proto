@@ -1,0 +1,124 @@
+syntax = "proto3";
+package dymensionxyz.dymension.dymns;
+
+import "gogoproto/gogo.proto";
+import "cosmos/base/v1beta1/coin.proto";
+import "cosmos/msg/v1/msg.proto";
+
+option go_package = "github.com/dymensionxyz/dymension/v3/x/dymns/types";
+
+// Msg defines the Msg service.
+service Msg {
+    rpc RegisterName(MsgRegisterName) returns (MsgRegisterNameResponse) {}
+    rpc TransferOwnership(MsgTransferOwnership) returns (MsgTransferOwnershipResponse) {}
+    rpc SetController(MsgSetController) returns (MsgSetControllerResponse) {}
+    rpc UpdateResolveAddress(MsgUpdateResolveAddress) returns (MsgUpdateResolveAddressResponse) {}
+    rpc PutAdsSellName(MsgPutAdsSellName) returns (MsgPutAdsSellNameResponse) {}
+    rpc CancelAdsSellName(MsgCancelAdsSellName) returns (MsgCancelAdsSellNameResponse) {}
+    rpc PurchaseName(MsgPurchaseName) returns (MsgPurchaseNameResponse) {}
+}
+
+// MsgRegisterName defines the message used for user to register or extends ownership duration of a Dym-Name.
+message MsgRegisterName {
+    option (cosmos.msg.v1.signer) = "owner";
+    // name is the Dym-Name to be registered.
+    string name = 1;
+    // duration is the number of years the Dym-Name will be registered for.
+    int32 duration = 2;
+    // owner is the bech32-encoded address of the account which owns the order.
+    string owner = 3;
+}
+
+// MsgRegisterNameResponse defines the response for the name registration.
+message MsgRegisterNameResponse {}
+
+// MsgTransferOwnership defines the message used for user to transfer ownership of a Dym-Name.
+message MsgTransferOwnership {
+    option (cosmos.msg.v1.signer) = "owner";
+    // name is the Dym-Name to be transferred ownership.
+    string name = 1;
+    // new_owner is the bech32-encoded address of the next account which will own the Dym-Name.
+    string new_owner = 2;
+    // owner is the bech32-encoded address of the account which is currently owner of the Dym-Name.
+    string owner = 3;
+}
+
+// MsgTransferOwnershipResponse defines the response for the name transfer.
+message MsgTransferOwnershipResponse {}
+
+// MsgSetController defines the message used for user to set a controller for a Dym-Name.
+message MsgSetController {
+    option (cosmos.msg.v1.signer) = "owner";
+    // name is the Dym-Name to be updated controller.
+    string name = 1;
+    // controller is the bech32-encoded address of the account which will be the new controller of the Dym-Name.
+    string controller = 2;
+    // owner is the bech32-encoded address of the account which is currently owner of the Dym-Name.
+    string owner = 3;
+}
+
+// MsgSetControllerResponse defines the response for the name controller setting.
+message MsgSetControllerResponse {}
+
+// MsgUpdateResolveAddress defines the message used for user to update the resolve address of a Dym-Name.
+message MsgUpdateResolveAddress {
+    option (cosmos.msg.v1.signer) = "controller";
+    // name is the Dym-Name to be updated controller.
+    string name = 1;
+    // chain_id is an optional field, chain-based mapping
+    string chain_id = 2;
+    // sub_name is an optional field, sub-domain-like mapping
+    string sub_name = 3;
+    // resolve_to is the address that this config will resolve to.
+    // Leave it empty to remove the resolve address.
+    string resolve_to = 4;
+    // controller is the bech32-encoded address of the account which has permission to update configure of the Dym-Name.
+    string controller = 5;
+}
+
+// MsgUpdateResolveAddressResponse defines the response for the name resolve address update.
+message MsgUpdateResolveAddressResponse {}
+
+// MsgPutAdsSellName defines the message used for user to put a Dym-Name for sale.
+message MsgPutAdsSellName {
+    option (cosmos.msg.v1.signer) = "owner";
+    // name is the Dym-Name to be opened for purchase.
+    string name = 1;
+    // min_price is the minimum price that buyer must pay for the Dym-Name.
+    // Note: even tho only DYM is allowed for payment, the min_price is still a Coin type to be able for future expansion.
+    cosmos.base.v1beta1.Coin min_price = 2 [(gogoproto.nullable) = false];
+    // sell_price is the price that buyer must pay for the Dym-Name to immediately own it.
+    // Setting this field to nil means the Dym-Name is not for immediate purchase and must wait until the order expired.
+    cosmos.base.v1beta1.Coin sell_price = 3;
+    // owner is the bech32-encoded address of the account which owns the order.
+    string owner = 4;
+}
+
+// MsgPutAdsSellNameResponse defines the response for the name sell advertisement.
+message MsgPutAdsSellNameResponse {}
+
+// MsgCancelAdsSellName defines the message used for user to cancel a Dym-Name sell advertisement.
+message MsgCancelAdsSellName {
+    option (cosmos.msg.v1.signer) = "owner";
+    // name is the Dym-Name to be closed for purchase.
+    string name = 1;
+    // owner is the bech32-encoded address of the account which owns the Dym-Name as well as the order.
+    string owner = 3;
+}
+
+// MsgCancelAdsSellNameResponse defines the response for the name sell advertisement cancellation.
+message MsgCancelAdsSellNameResponse {}
+
+// MsgPurchaseName defines the message used for user to bid/purchase a Dym-Name.
+message MsgPurchaseName {
+    option (cosmos.msg.v1.signer) = "buyer";
+    // name is the Dym-Name to be purchased.
+    string name = 1;
+    // offer is the price that buyer is willing to pay for the Dym-Name.
+    cosmos.base.v1beta1.Coin offer = 2 [(gogoproto.nullable) = false];
+    // buyer is the bech32-encoded address of the account which is purchasing the Dym-Name.
+    string buyer = 3;
+}
+
+// MsgPurchaseNameResponse defines the response for the name purchase.
+message MsgPurchaseNameResponse {}
