@@ -8,11 +8,11 @@ func (k Keeper) IsRollAppId(ctx sdk.Context, chainId string) bool {
 }
 
 func (k Keeper) GetRollAppIdByAlias(ctx sdk.Context, alias string) (rollAppId string, found bool) {
-	// TODO DymNS: implement GetRollAppIdByAlias
+	// TODO DymNS: implement Get RollApp-Id By Alias
 	return "", false
 }
 
 func (k Keeper) GetRollAppBech32Prefix(ctx sdk.Context, chainId string) (bech32Prefix string, found bool) {
-	// TODO DymNS: implement GetRollAppBech32Prefix
+	// TODO DymNS: implement Get RollApp Bech32 Prefix
 	return "", false
 }
