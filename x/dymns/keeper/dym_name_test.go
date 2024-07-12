@@ -8,8 +8,9 @@ import (
 	dymnskeeper "github.com/dymensionxyz/dymension/v3/x/dymns/keeper"
 	dymnstypes "github.com/dymensionxyz/dymension/v3/x/dymns/types"
 	dymnsutils "github.com/dymensionxyz/dymension/v3/x/dymns/utils"
+	rollappkeeper "github.com/dymensionxyz/dymension/v3/x/rollapp/keeper"
+	rollapptypes "github.com/dymensionxyz/dymension/v3/x/rollapp/types"
 	"github.com/stretchr/testify/require"
-	"strings"
 	"testing"
 	"time"
 )
@@ -450,13 +451,13 @@ func TestKeeper_ResolveByDymNameAddress(t *testing.T) {
 
 	const chainId = "dymension_1100-1"
 
-	setupTest := func() (dymnskeeper.Keeper, sdk.Context) {
-		dk, _, _, ctx := testkeeper.DymNSKeeper(t)
+	setupTest := func() (dymnskeeper.Keeper, rollappkeeper.Keeper, sdk.Context) {
+		dk, _, rk, ctx := testkeeper.DymNSKeeper(t)
 		ctx = ctx.WithBlockHeader(tmproto.Header{
 			Time: now,
 		}).WithChainID(chainId)
 
-		return dk, ctx
+		return dk, rk, ctx
 	}
 
 	addr1 := "dym1fl48vsnmsdzcv85q5d2q4z5ajdha8yu38x9fue"
@@ -1069,9 +1070,31 @@ func TestKeeper_ResolveByDymNameAddress(t *testing.T) {
 				require.NoError(t, err)
 				require.Equal(t, addr3, outputAddr)
 
+				outputAddr, err = dk.ResolveByDymNameAddress(ctx, "non-exists.a.dym")
+				require.Error(t, err)
+				require.Contains(t, err.Error(), "no resolution found")
+
 				outputAddr, err = dk.ResolveByDymNameAddress(ctx, "a@bb")
 				require.NoError(t, err)
 				require.Equal(t, addr2, outputAddr)
+			},
+		},
+		{
+			name: "do not fallback for sub-name",
+			dymName: &dymnstypes.DymName{
+				Name:       "a",
+				Owner:      addr1,
+				Controller: addr2,
+				ExpireAt:   now.Unix() + 1,
+				Configs:    nil,
+			},
+			dymNameAddress:  "sub.a.dymension_1100-1",
+			wantError:       true,
+			wantErrContains: "no resolution found",
+			postTest: func(ctx sdk.Context, dk dymnskeeper.Keeper) {
+				outputAddr, err := dk.ResolveByDymNameAddress(ctx, "a.dymension_1100-1")
+				require.NoError(t, err, "should fallback if not sub-name")
+				require.Equal(t, addr1, outputAddr)
 			},
 		},
 		{
@@ -1097,7 +1120,7 @@ func TestKeeper_ResolveByDymNameAddress(t *testing.T) {
 				Name:       "a",
 				Owner:      addr1,
 				Controller: addr2,
-				ExpireAt:   now.Unix() - 1,
+				ExpireAt:   now.Unix() + 1,
 				Configs: []dymnstypes.DymNameConfig{{
 					Type:  dymnstypes.DymNameConfigType_NAME,
 					Path:  "",
@@ -1108,10 +1131,51 @@ func TestKeeper_ResolveByDymNameAddress(t *testing.T) {
 			wantError:       true,
 			wantErrContains: dymnstypes.ErrBadDymNameAddress.Error(),
 		},
+		{
+			name: "if alias collision with configured record, priority configuration",
+			dymName: &dymnstypes.DymName{
+				Name:       "a",
+				Owner:      addr1,
+				Controller: addr2,
+				ExpireAt:   now.Unix() + 1,
+				Configs: []dymnstypes.DymNameConfig{
+					{
+						Type:    dymnstypes.DymNameConfigType_NAME,
+						ChainId: "blumbus_111-1",
+						Path:    "",
+						Value:   addr2,
+					},
+					{
+						Type:    dymnstypes.DymNameConfigType_NAME,
+						ChainId: "blumbus",
+						Path:    "",
+						Value:   addr3,
+					},
+				},
+			},
+			preSetup: func(ctx sdk.Context, dk dymnskeeper.Keeper) {
+				params := dk.GetParams(ctx)
+				params.Alias.ByChainId = map[string]dymnstypes.AliasesOfChainId{
+					"blumbus_111-1": {
+						Aliases: []string{"blumbus"},
+					},
+				}
+				err := dk.SetParams(ctx, params)
+				require.NoError(t, err)
+			},
+			dymNameAddress:    "a.blumbus",
+			wantError:         false,
+			wantOutputAddress: addr3,
+			postTest: func(ctx sdk.Context, dk dymnskeeper.Keeper) {
+				outputAddr, err := dk.ResolveByDymNameAddress(ctx, "a@blumbus_111-1")
+				require.NoError(t, err)
+				require.Equal(t, addr2, outputAddr)
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			dk, ctx := setupTest()
+			dk, _, ctx := setupTest()
 
 			if tt.preSetup != nil {
 				tt.preSetup(ctx, dk)
@@ -1122,6 +1186,17 @@ func TestKeeper_ResolveByDymNameAddress(t *testing.T) {
 			}
 
 			outputAddress, err := dk.ResolveByDymNameAddress(ctx, tt.dymNameAddress)
+
+			defer func() {
+				if t.Failed() {
+					return
+				}
+
+				if tt.postTest != nil {
+					tt.postTest(ctx, dk)
+				}
+			}()
+
 			if tt.wantError {
 				require.NotEmpty(t, tt.wantErrContains, "mis-configured test case")
 				require.Error(t, err)
@@ -1131,15 +1206,11 @@ func TestKeeper_ResolveByDymNameAddress(t *testing.T) {
 
 			require.NoError(t, err)
 			require.Equal(t, tt.wantOutputAddress, outputAddress)
-
-			if tt.postTest != nil {
-				tt.postTest(ctx, dk)
-			}
 		})
 	}
 
 	t.Run("mixed tests", func(t *testing.T) {
-		dk, ctx := setupTest()
+		dk, rk, ctx := setupTest()
 
 		addr := func(no uint64) string {
 			bz1 := sdk.Uint64ToBigEndian(no)
@@ -1345,73 +1416,110 @@ func TestKeeper_ResolveByDymNameAddress(t *testing.T) {
 		}
 		require.NoError(t, dk.SetDymName(ctx, dymName3))
 
+		dymName4 := dymnstypes.DymName{
+			Name:       "name4",
+			Owner:      "dym1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqp7vezn",
+			Controller: addr(301),
+			ExpireAt:   now.Unix() + 1,
+			Configs: []dymnstypes.DymNameConfig{
+				{
+					Type:    dymnstypes.DymNameConfigType_NAME,
+					ChainId: "",
+					Path:    "s1",
+					Value:   addr(302),
+				},
+			},
+		}
+		require.NoError(t, dk.SetDymName(ctx, dymName4))
+
+		rollAppNim := rollapptypes.Rollapp{
+			RollappId: "nim_1122-1",
+			Creator:   addr(1122),
+		}
+		rk.SetRollapp(ctx, rollAppNim)
+		rollAppNim, found := rk.GetRollapp(ctx, rollAppNim.RollappId)
+		require.True(t, found)
+
 		tc := func(name, chainIdOrAlias string) input {
 			return newInputTestcase(name, chainIdOrAlias, ctx, dk, t)
 		}
 
-		tc("name1", chainId).WithSub("s1").RequireResolveTo(addr(3))
-		tc("name1", "dym").WithSub("s1").RequireResolveTo(addr(3))
-		tc("name1", chainId).WithSub("s2").RequireResolveTo(addr(4))
-		tc("name1", "dym").WithSub("s2").RequireResolveTo(addr(4))
-		tc("name1", chainId).WithSub("a", "s5").RequireResolveTo(addr(5))
-		tc("name1", "dym").WithSub("a", "s5").RequireResolveTo(addr(5))
-		tc("name1", chainId).WithSub("none").RequireNotResolve()
-		tc("name1", "dym").WithSub("none").RequireNotResolve()
-		tc("name1", "blumbus_111-1").WithSub("b").RequireResolveTo(addr(6))
-		tc("name1", "bb").WithSub("b").RequireResolveTo(addr(6))
-		tc("name1", "blumbus_111-1").WithSub("c", "b").RequireResolveTo(addr(7))
-		tc("name1", "bb").WithSub("c", "b").RequireResolveTo(addr(7))
-		tc("name1", "blumbus_111-1").WithSub("none").RequireNotResolve()
-		tc("name1", "bb").WithSub("none").RequireNotResolve()
+		tc("name1", chainId).WithSubName("s1").RequireResolveTo(addr(3))
+		tc("name1", "dym").WithSubName("s1").RequireResolveTo(addr(3))
+		tc("name1", chainId).WithSubName("s2").RequireResolveTo(addr(4))
+		tc("name1", "dym").WithSubName("s2").RequireResolveTo(addr(4))
+		tc("name1", chainId).WithSubName("a.s5").RequireResolveTo(addr(5))
+		tc("name1", "dym").WithSubName("a.s5").RequireResolveTo(addr(5))
+		tc("name1", chainId).WithSubName("none").RequireNotResolve()
+		tc("name1", "dym").WithSubName("none").RequireNotResolve()
+		tc("name1", "blumbus_111-1").WithSubName("b").RequireResolveTo(addr(6))
+		tc("name1", "bb").WithSubName("b").RequireResolveTo(addr(6))
+		tc("name1", "blumbus_111-1").WithSubName("c.b").RequireResolveTo(addr(7))
+		tc("name1", "bb").WithSubName("c.b").RequireResolveTo(addr(7))
+		tc("name1", "blumbus_111-1").WithSubName("none").RequireNotResolve()
+		tc("name1", "bb").WithSubName("none").RequireNotResolve()
 		tc("name1", "juno-1").RequireResolveTo(addr(8))
-		tc("name1", "juno-1").WithSub("a", "b", "c").RequireResolveTo(addr(9))
-		tc("name1", "juno-1").WithSub("none").RequireNotResolve()
+		tc("name1", "juno-1").WithSubName("a.b.c").RequireResolveTo(addr(9))
+		tc("name1", "juno-1").WithSubName("none").RequireNotResolve()
 		tc("name1", "cosmoshub-4").RequireResolveTo(addr(10))
 		tc("name1", "cosmos").RequireResolveTo(addr(10))
 
-		tc("name2", chainId).WithSub("s1").RequireResolveTo(addr(103))
-		tc("name2", "dym").WithSub("s1").RequireResolveTo(addr(103))
-		tc("name2", chainId).WithSub("s2").RequireResolveTo(addr(104))
-		tc("name2", "dym").WithSub("s2").RequireResolveTo(addr(104))
-		tc("name2", chainId).WithSub("a", "s5").RequireResolveTo(addr(105))
-		tc("name2", "dym").WithSub("a", "s5").RequireResolveTo(addr(105))
-		tc("name2", chainId).WithSub("none").RequireNotResolve()
-		tc("name2", "dym").WithSub("none").RequireNotResolve()
-		tc("name2", "blumbus_111-1").WithSub("b").RequireResolveTo(addr(106))
-		tc("name2", "bb").WithSub("b").RequireResolveTo(addr(106))
-		tc("name2", "blumbus_111-1").WithSub("c", "b").RequireResolveTo(addr(107))
-		tc("name2", "bb").WithSub("c", "b").RequireResolveTo(addr(107))
-		tc("name2", "blumbus_111-1").WithSub("none").RequireNotResolve()
-		tc("name2", "bb").WithSub("none").RequireNotResolve()
+		tc("name2", chainId).WithSubName("s1").RequireResolveTo(addr(103))
+		tc("name2", "dym").WithSubName("s1").RequireResolveTo(addr(103))
+		tc("name2", chainId).WithSubName("s2").RequireResolveTo(addr(104))
+		tc("name2", "dym").WithSubName("s2").RequireResolveTo(addr(104))
+		tc("name2", chainId).WithSubName("a.s5").RequireResolveTo(addr(105))
+		tc("name2", "dym").WithSubName("a.s5").RequireResolveTo(addr(105))
+		tc("name2", chainId).WithSubName("none").RequireNotResolve()
+		tc("name2", "dym").WithSubName("none").RequireNotResolve()
+		tc("name2", "blumbus_111-1").WithSubName("b").RequireResolveTo(addr(106))
+		tc("name2", "bb").WithSubName("b").RequireResolveTo(addr(106))
+		tc("name2", "blumbus_111-1").WithSubName("c.b").RequireResolveTo(addr(107))
+		tc("name2", "bb").WithSubName("c.b").RequireResolveTo(addr(107))
+		tc("name2", "blumbus_111-1").WithSubName("none").RequireNotResolve()
+		tc("name2", "bb").WithSubName("none").RequireNotResolve()
 		tc("name2", "juno-1").RequireResolveTo(addr(108))
-		tc("name2", "juno-1").WithSub("a", "b", "c").RequireResolveTo(addr(109))
-		tc("name2", "juno-1").WithSub("none").RequireNotResolve()
-		tc("name2", "froopyland_100-1").WithSub("a").RequireResolveTo(addr(110))
-		tc("name2", "froopyland").WithSub("a").RequireNotResolve()
+		tc("name2", "juno-1").WithSubName("a.b.c").RequireResolveTo(addr(109))
+		tc("name2", "juno-1").WithSubName("none").RequireNotResolve()
+		tc("name2", "froopyland_100-1").WithSubName("a").RequireResolveTo(addr(110))
+		tc("name2", "froopyland").WithSubName("a").RequireNotResolve()
 		tc("name2", "cosmoshub-4").RequireNotResolve()
-		tc("name2", "cosmoshub-4").WithSub("a").RequireNotResolve()
+		tc("name2", "cosmoshub-4").WithSubName("a").RequireNotResolve()
 
-		tc("name3", chainId).WithSub("s1").RequireResolveTo(addr(203))
-		tc("name3", "dym").WithSub("s1").RequireResolveTo(addr(203))
-		tc("name3", chainId).WithSub("s2").RequireResolveTo(addr(204))
-		tc("name3", "dym").WithSub("s2").RequireResolveTo(addr(204))
-		tc("name3", chainId).WithSub("a", "s5").RequireResolveTo(addr(205))
-		tc("name3", "dym").WithSub("a", "s5").RequireResolveTo(addr(205))
-		tc("name3", chainId).WithSub("none").RequireNotResolve()
-		tc("name3", "dym").WithSub("none").RequireNotResolve()
-		tc("name3", "blumbus_111-1").WithSub("b").RequireResolveTo(addr(206))
-		tc("name3", "bb").WithSub("b").RequireResolveTo(addr(206))
-		tc("name3", "blumbus_111-1").WithSub("c", "b").RequireResolveTo(addr(207))
-		tc("name3", "bb").WithSub("c", "b").RequireResolveTo(addr(207))
-		tc("name3", "blumbus_111-1").WithSub("none").RequireNotResolve()
-		tc("name3", "bb").WithSub("none").RequireNotResolve()
+		tc("name3", chainId).WithSubName("s1").RequireResolveTo(addr(203))
+		tc("name3", "dym").WithSubName("s1").RequireResolveTo(addr(203))
+		tc("name3", chainId).WithSubName("s2").RequireResolveTo(addr(204))
+		tc("name3", "dym").WithSubName("s2").RequireResolveTo(addr(204))
+		tc("name3", chainId).WithSubName("a.s5").RequireResolveTo(addr(205))
+		tc("name3", "dym").WithSubName("a.s5").RequireResolveTo(addr(205))
+		tc("name3", chainId).WithSubName("none").RequireNotResolve()
+		tc("name3", "dym").WithSubName("none").RequireNotResolve()
+		tc("name3", "blumbus_111-1").WithSubName("b").RequireResolveTo(addr(206))
+		tc("name3", "bb").WithSubName("b").RequireResolveTo(addr(206))
+		tc("name3", "blumbus_111-1").WithSubName("c.b").RequireResolveTo(addr(207))
+		tc("name3", "bb").WithSubName("c.b").RequireResolveTo(addr(207))
+		tc("name3", "blumbus_111-1").WithSubName("none").RequireNotResolve()
+		tc("name3", "bb").WithSubName("none").RequireNotResolve()
 		tc("name3", "juno-1").RequireResolveTo(addr(208))
-		tc("name3", "juno-1").WithSub("a", "b", "c").RequireResolveTo(addr(209))
-		tc("name3", "juno-1").WithSub("none").RequireNotResolve()
-		tc("name3", "froopyland_100-1").WithSub("a").RequireResolveTo(addr(210))
-		tc("name3", "froopyland").WithSub("a").RequireNotResolve()
+		tc("name3", "juno-1").WithSubName("a.b.c").RequireResolveTo(addr(209))
+		tc("name3", "juno-1").WithSubName("none").RequireNotResolve()
+		tc("name3", "froopyland_100-1").WithSubName("a").RequireResolveTo(addr(210))
+		tc("name3", "froopyland").WithSubName("a").RequireNotResolve()
 		tc("name3", "cosmoshub-4").RequireNotResolve()
-		tc("name3", "cosmos").WithSub("a").RequireResolveTo(addr(211))
+		tc("name3", "cosmos").WithSubName("a").RequireResolveTo(addr(211))
+
+		tc("name4", chainId).WithSubName("s1").RequireResolveTo(addr(302))
+		tc("name4", "dym").WithSubName("s1").RequireResolveTo(addr(302))
+		tc("name4", chainId).WithSubName("none").RequireNotResolve()
+		tc("name4", "dym").WithSubName("none").RequireNotResolve()
+		tc("name4", chainId).RequireResolveTo("dym1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqp7vezn")
+		tc("name4", "dym").RequireResolveTo("dym1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqp7vezn")
+		tc("name4", rollAppNim.RollappId).RequireResolveTo(
+			// must resolve to owner with nim prefix
+			// TODO DymNS: resolve to rollapp based address using bech32 prefix.
+			// This testcase is failed atm.
+			"nim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq8wkcvv",
+		)
 	})
 }
 
@@ -1422,15 +1530,15 @@ type input struct {
 	//
 	name           string
 	chainIdOrAlias string
-	subNameParts   []string
+	subName        string
 }
 
 func newInputTestcase(name, chainIdOrAlias string, ctx sdk.Context, dk dymnskeeper.Keeper, t *testing.T) input {
 	return input{name: name, chainIdOrAlias: chainIdOrAlias, ctx: ctx, dk: dk, t: t}
 }
 
-func (m input) WithSub(parts ...string) input {
-	m.subNameParts = parts
+func (m input) WithSubName(subName string) input {
+	m.subName = subName
 	return m
 }
 
@@ -1438,15 +1546,15 @@ func (m input) buildDymNameAddrsCases() []string {
 	var dymNameAddrs []string
 	func() {
 		dymNameAddr := m.name + "." + m.chainIdOrAlias
-		if len(m.subNameParts) > 0 {
-			dymNameAddr = strings.Join(append(m.subNameParts, dymNameAddr), ".")
+		if len(m.subName) > 0 {
+			dymNameAddr = m.subName + "." + dymNameAddr
 		}
 		dymNameAddrs = append(dymNameAddrs, dymNameAddr)
 	}()
 	func() {
 		dymNameAddr := m.name + "@" + m.chainIdOrAlias
-		if len(m.subNameParts) > 0 {
-			dymNameAddr = strings.Join(append(m.subNameParts, dymNameAddr), ".")
+		if len(m.subName) > 0 {
+			dymNameAddr = m.subName + "." + dymNameAddr
 		}
 		dymNameAddrs = append(dymNameAddrs, dymNameAddr)
 	}()
@@ -1474,7 +1582,7 @@ func Test_ParseDymNameAddress(t *testing.T) {
 		dymNameAddress     string
 		wantErr            bool
 		wantErrContains    string
-		wantSubNameParts   []string
+		wantSubName        string
 		wantDymName        string
 		wantChainIdOrAlias string
 	}{
@@ -1505,56 +1613,56 @@ func Test_ParseDymNameAddress(t *testing.T) {
 		{
 			name:               "valid, sub-name, chain-id, @",
 			dymNameAddress:     "b.a@dymension_1100-1",
-			wantSubNameParts:   []string{"b"},
+			wantSubName:        "b",
 			wantDymName:        "a",
 			wantChainIdOrAlias: "dymension_1100-1",
 		},
 		{
 			name:               "valid, sub-name, chain-id",
 			dymNameAddress:     "b.a.dymension_1100-1",
-			wantSubNameParts:   []string{"b"},
+			wantSubName:        "b",
 			wantDymName:        "a",
 			wantChainIdOrAlias: "dymension_1100-1",
 		},
 		{
 			name:               "valid, sub-name, alias, @",
 			dymNameAddress:     "b.a@dym",
-			wantSubNameParts:   []string{"b"},
+			wantSubName:        "b",
 			wantDymName:        "a",
 			wantChainIdOrAlias: "dym",
 		},
 		{
 			name:               "valid, sub-name, alias",
 			dymNameAddress:     "b.a.dym",
-			wantSubNameParts:   []string{"b"},
+			wantSubName:        "b",
 			wantDymName:        "a",
 			wantChainIdOrAlias: "dym",
 		},
 		{
 			name:               "valid, multi-sub-name, chain-id, @",
 			dymNameAddress:     "c.b.a@dymension_1100-1",
-			wantSubNameParts:   []string{"c", "b"},
+			wantSubName:        "c.b",
 			wantDymName:        "a",
 			wantChainIdOrAlias: "dymension_1100-1",
 		},
 		{
 			name:               "valid, multi-sub-name, chain-id",
 			dymNameAddress:     "c.b.a.dymension_1100-1",
-			wantSubNameParts:   []string{"c", "b"},
+			wantSubName:        "c.b",
 			wantDymName:        "a",
 			wantChainIdOrAlias: "dymension_1100-1",
 		},
 		{
 			name:               "valid, multi-sub-name, alias, @",
 			dymNameAddress:     "c.b.a@dym",
-			wantSubNameParts:   []string{"c", "b"},
+			wantSubName:        "c.b",
 			wantDymName:        "a",
 			wantChainIdOrAlias: "dym",
 		},
 		{
 			name:               "valid, multi-sub-name, alias",
 			dymNameAddress:     "c.b.a.dym",
-			wantSubNameParts:   []string{"c", "b"},
+			wantSubName:        "c.b",
 			wantDymName:        "a",
 			wantChainIdOrAlias: "dym",
 		},
@@ -1753,7 +1861,7 @@ func Test_ParseDymNameAddress(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotSubNameParts, gotDymName, gotChainIdOrAlias, err := dymnskeeper.ParseDymNameAddress(tt.dymNameAddress)
+			gotSubName, gotDymName, gotChainIdOrAlias, err := dymnskeeper.ParseDymNameAddress(tt.dymNameAddress)
 			if tt.wantErr {
 				require.NotEmpty(t, tt.wantErrContains, "mis-configured test case")
 				require.Error(t, err)
@@ -1767,11 +1875,7 @@ func Test_ParseDymNameAddress(t *testing.T) {
 			}
 
 			require.NoError(t, err)
-			if len(tt.wantSubNameParts) == 0 {
-				require.Empty(t, gotSubNameParts)
-			} else {
-				require.Equal(t, tt.wantSubNameParts, gotSubNameParts)
-			}
+			require.Equal(t, tt.wantSubName, gotSubName)
 			require.Equal(t, tt.wantDymName, gotDymName)
 			require.Equal(t, tt.wantChainIdOrAlias, gotChainIdOrAlias)
 		})

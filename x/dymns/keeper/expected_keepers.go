@@ -1,6 +1,9 @@
 package keeper
 
-import sdk "github.com/cosmos/cosmos-sdk/types"
+import (
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	rollapptypes "github.com/dymensionxyz/dymension/v3/x/rollapp/types"
+)
 
 // BankKeeper defines the expected x/bank keeper
 type BankKeeper interface {
@@ -13,4 +16,6 @@ type BankKeeper interface {
 
 // RollAppKeeper defines the expected x/rollapp keeper
 type RollAppKeeper interface {
+	GetRollapp(ctx sdk.Context, rollappId string) (val rollapptypes.Rollapp, found bool)
+	SetRollapp(ctx sdk.Context, rollapp rollapptypes.Rollapp)
 }

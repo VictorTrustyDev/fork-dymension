@@ -234,7 +234,7 @@ func (k Keeper) PruneDymName(ctx sdk.Context, name string) error {
 }
 
 func (k Keeper) ResolveByDymNameAddress(ctx sdk.Context, dymNameAddress string) (outputAddress string, err error) {
-	subNameParts, name, chainIdOrAlias, parseErr := ParseDymNameAddress(dymNameAddress)
+	subName, name, chainIdOrAlias, parseErr := ParseDymNameAddress(dymNameAddress)
 	if parseErr != nil {
 		ctx.Logger().Debug("failed to parse Dym-Name address", "dym-name-address", dymNameAddress, "error", parseErr)
 		err = parseErr
@@ -257,78 +257,121 @@ func (k Keeper) ResolveByDymNameAddress(ctx sdk.Context, dymNameAddress string) 
 		}
 	}()
 
-	var resolvedChainId string
+	tryResolveFromConfig := func(lookupChainIdConfig string) (value string, found bool) {
+		if lookupChainIdConfig == ctx.ChainID() {
+			lookupChainIdConfig = ""
+		}
+
+		for _, config := range dymName.Configs {
+			if config.Type != dymnstypes.DymNameConfigType_NAME {
+				continue
+			}
+
+			if config.ChainId != lookupChainIdConfig {
+				continue
+			}
+
+			if config.Path != subName {
+				continue
+			}
+
+			return config.Value, true
+		}
+
+		return "", false
+	}
+
+	// first attempt to resolve, to see if the chain-id/alias is user-configured
+	var found bool
+	outputAddress, found = tryResolveFromConfig(chainIdOrAlias)
+	if found {
+		return
+	}
+
+	// end of first attempt
+
+	var resolvedToChainId string
+
 	if chainIdOrAlias == ctx.ChainID() {
-		resolvedChainId = chainIdOrAlias
+		resolvedToChainId = chainIdOrAlias
+	} else if chainId, success := k.tryResolveChainIdOrAliasToChainId(ctx, chainIdOrAlias); success {
+		resolvedToChainId = chainId
 	} else {
-		aliasParams := k.AliasParams(ctx)
-		if len(aliasParams.ByChainId) > 0 {
-		loopFindChainId:
-			for chainId, aliases := range aliasParams.ByChainId {
-				if chainIdOrAlias == chainId {
-					resolvedChainId = chainId
-					break
-				}
+		// treat it as chain-id
+		resolvedToChainId = chainIdOrAlias
+	}
 
-				if len(aliases.Aliases) == 0 {
-					continue
-				}
+	// second attempt to resolve
+	outputAddress, found = tryResolveFromConfig(resolvedToChainId)
+	if found {
+		return
+	}
+	// end of second attempt
 
-				for _, alias := range aliases.Aliases {
-					if alias == chainIdOrAlias {
-						resolvedChainId = chainId
-						break loopFindChainId
-					}
+	// no more attempts to resolve from config
+
+	// try fallback
+
+	if subName != "" {
+		// no need to fallback
+		return
+	}
+
+	if resolvedToChainId == ctx.ChainID() {
+		outputAddress = dymName.Owner
+		return
+	}
+
+	// not the host chain, try to resolve if is a RollApp
+
+	isRollAppId := k.IsRollAppId(ctx, resolvedToChainId)
+	if !isRollAppId {
+		// fallback does not apply for non-RollApp
+		return
+	}
+
+	rollAppBech32Prefix, found := k.GetRollAppBech32Prefix(ctx, resolvedToChainId)
+	if !found {
+		// fallback does not apply for RollApp does not have this metadata
+		return
+	}
+
+	accAddr := sdk.MustAccAddressFromBech32(dymName.Owner)
+	rollAppBasedBech32Addr, convertErr := bech32.ConvertAndEncode(rollAppBech32Prefix, accAddr)
+	if convertErr != nil {
+		err = sdkerrors.ErrInvalidAddress.Wrapf(
+			"failed to convert '%s' to RollApp-based address: %v", dymName.Owner, convertErr,
+		)
+		return
+	}
+
+	outputAddress = rollAppBasedBech32Addr
+	return
+}
+
+func (k Keeper) tryResolveChainIdOrAliasToChainId(ctx sdk.Context, chainIdOrAlias string) (resolvedToChainId string, success bool) {
+	aliasParams := k.AliasParams(ctx)
+	if len(aliasParams.ByChainId) > 0 {
+		for chainId, aliases := range aliasParams.ByChainId {
+			if chainIdOrAlias == chainId {
+				return chainId, true
+			}
+
+			for _, alias := range aliases.Aliases {
+				if alias == chainIdOrAlias {
+					return chainId, true
 				}
 			}
 		}
 	}
 
-	if resolvedChainId == "" {
-		if !dymnsutils.IsValidChainIdFormat(chainIdOrAlias) {
-			err = dymnstypes.ErrBadDymNameAddress.Wrap("chain-id is not well-formed")
-			return
-		}
-		resolvedChainId = chainIdOrAlias
+	if isRollAppId := k.IsRollAppId(ctx, chainIdOrAlias); isRollAppId {
+		return chainIdOrAlias, true
 	}
 
-	var lookupChainIdConfig, lookupSubName string
-	if resolvedChainId == ctx.ChainID() {
-		lookupChainIdConfig = ""
-	} else {
-		lookupChainIdConfig = resolvedChainId
-	}
-	if len(subNameParts) == 0 {
-		lookupSubName = ""
-	} else {
-		lookupSubName = strings.Join(subNameParts, ".")
-	}
-
-	for _, config := range dymName.Configs {
-		if config.Type != dymnstypes.DymNameConfigType_NAME {
-			continue
-		}
-
-		if config.ChainId != lookupChainIdConfig {
-			continue
-		}
-
-		if config.Path != lookupSubName {
-			continue
-		}
-
-		outputAddress = config.Value
-		return
-	}
-
-	// no resolution found
-
-	if lookupSubName == "" {
-		if lookupChainIdConfig == "" { // for host chain
-			outputAddress = dymName.Owner
-		} else {
-			// TODO DymNS: implement fallback RollApp chain-id
-		}
+	if rollAppId, found := k.GetRollAppIdByAlias(ctx, chainIdOrAlias); found {
+		// TODO DymNS: require RollApp alias to use dymnsutils.IsValidAlias to validate the alias
+		return rollAppId, true
 	}
 
 	return
@@ -337,7 +380,7 @@ func (k Keeper) ResolveByDymNameAddress(ctx sdk.Context, dymNameAddress string) 
 func ParseDymNameAddress(
 	dymNameAddress string,
 ) (
-	subNameParts []string, dymName string, chainIdOrAlias string, err error,
+	subName string, dymName string, chainIdOrAlias string, err error,
 ) {
 	dymNameAddress = strings.ToLower(strings.TrimSpace(dymNameAddress))
 
@@ -400,7 +443,14 @@ func ParseDymNameAddress(
 	chainIdOrAlias = chunks[len(chunks)-1]
 	dymName = chunks[len(chunks)-2]
 	if len(chunks) > 2 {
-		subNameParts = chunks[:len(chunks)-2]
+		subNameParts := chunks[:len(chunks)-2]
+		for _, subNamePart := range subNameParts {
+			if !dymnsutils.IsValidDymName(subNamePart) {
+				err = dymnstypes.ErrBadDymNameAddress.Wrap("sub-Dym-Name is not well-formed")
+				return
+			}
+		}
+		subName = strings.Join(subNameParts, ".")
 	}
 
 	if !dymnsutils.IsValidChainIdFormat(chainIdOrAlias) &&
@@ -412,15 +462,6 @@ func ParseDymNameAddress(
 	if !dymnsutils.IsValidDymName(dymName) {
 		err = dymnstypes.ErrBadDymNameAddress.Wrap("Dym-Name is not well-formed")
 		return
-	}
-
-	if len(subNameParts) > 0 {
-		for _, subNamePart := range subNameParts {
-			if !dymnsutils.IsValidDymName(subNamePart) {
-				err = dymnstypes.ErrBadDymNameAddress.Wrap("sub-Dym-Name is not well-formed")
-				return
-			}
-		}
 	}
 
 	return

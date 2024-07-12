@@ -26,7 +26,7 @@ import (
 	rollapptypes "github.com/dymensionxyz/dymension/v3/x/rollapp/types"
 )
 
-func DymNSKeeper(t testing.TB) (dymnskeeper.Keeper, dymnskeeper.BankKeeper, *rollappkeeper.Keeper, sdk.Context) {
+func DymNSKeeper(t testing.TB) (dymnskeeper.Keeper, dymnskeeper.BankKeeper, rollappkeeper.Keeper, sdk.Context) {
 	dymNsStoreKey := sdk.NewKVStoreKey(dymnstypes.StoreKey)
 	dymNsMemStoreKey := storetypes.NewMemoryStoreKey(dymnstypes.MemStoreKey)
 
@@ -105,5 +105,5 @@ func DymNSKeeper(t testing.TB) (dymnskeeper.Keeper, dymnskeeper.BankKeeper, *rol
 	// Initialize params
 	k.SetParams(ctx, dymnstypes.DefaultParams())
 
-	return k, bankKeeper, rollappKeeper, ctx
+	return k, bankKeeper, *rollappKeeper, ctx
 }

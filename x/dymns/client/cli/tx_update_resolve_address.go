@@ -11,7 +11,6 @@ import (
 	dymnstypes "github.com/dymensionxyz/dymension/v3/x/dymns/types"
 	dymnsutils "github.com/dymensionxyz/dymension/v3/x/dymns/utils"
 	"github.com/spf13/cobra"
-	"strings"
 )
 
 func NewUpdateResolveDymNameAddressTxCmd() *cobra.Command {
@@ -41,7 +40,7 @@ func NewUpdateResolveDymNameAddressTxCmd() *cobra.Command {
 			}
 			moduleParams := resModuleParams.Params
 
-			subNameParts, dymName, chainIdOrAlias, err := dymnskeeper.ParseDymNameAddress(dymNameAddress)
+			subName, dymName, chainIdOrAlias, err := dymnskeeper.ParseDymNameAddress(dymNameAddress)
 			if err != nil {
 				return errors.Wrap(err, "failed to parse input Dym-Name-Address")
 			}
@@ -69,7 +68,7 @@ func NewUpdateResolveDymNameAddressTxCmd() *cobra.Command {
 			msg := &dymnstypes.MsgUpdateResolveAddress{
 				Name:       dymName,
 				ChainId:    chainId,
-				SubName:    strings.Join(subNameParts, "."),
+				SubName:    subName,
 				ResolveTo:  resolveTo,
 				Controller: clientCtx.GetFromAddress().String(),
 			}
