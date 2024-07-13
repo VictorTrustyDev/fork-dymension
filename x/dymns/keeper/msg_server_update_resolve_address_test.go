@@ -33,12 +33,13 @@ func Test_msgServer_UpdateResolveAddress(t *testing.T) {
 	const recordName = "bonded-pool"
 
 	tests := []struct {
-		name            string
-		dymName         *dymnstypes.DymName
-		msg             *dymnstypes.MsgUpdateResolveAddress
-		wantErr         bool
-		wantErrContains string
-		wantDymName     *dymnstypes.DymName
+		name                string
+		dymName             *dymnstypes.DymName
+		msg                 *dymnstypes.MsgUpdateResolveAddress
+		wantErr             bool
+		wantErrContains     string
+		wantDymName         *dymnstypes.DymName
+		wantMinGasConsummed sdk.Gas
 	}{
 		{
 			name: "fail - reject if message not pass validate basic",
@@ -168,6 +169,7 @@ func Test_msgServer_UpdateResolveAddress(t *testing.T) {
 					},
 				},
 			},
+			wantMinGasConsummed: dymnstypes.OpGasConfig,
 		},
 		{
 			name: "success - add new record if not exists",
@@ -205,6 +207,7 @@ func Test_msgServer_UpdateResolveAddress(t *testing.T) {
 					},
 				},
 			},
+			wantMinGasConsummed: dymnstypes.OpGasConfig,
 		},
 		{
 			name: "success - override record if exists",
@@ -247,6 +250,7 @@ func Test_msgServer_UpdateResolveAddress(t *testing.T) {
 					},
 				},
 			},
+			wantMinGasConsummed: dymnstypes.OpGasConfig,
 		},
 		{
 			name: "success - remove record if new resolve to empty, single-config",
@@ -274,6 +278,7 @@ func Test_msgServer_UpdateResolveAddress(t *testing.T) {
 				ExpireAt:   now.Unix() + 1,
 				Configs:    nil,
 			},
+			wantMinGasConsummed: 1,
 		},
 		{
 			name: "success - remove record if new resolve to empty, single-config, not match any",
@@ -307,6 +312,7 @@ func Test_msgServer_UpdateResolveAddress(t *testing.T) {
 					},
 				},
 			},
+			wantMinGasConsummed: 1,
 		},
 		{
 			name: "success - remove record if new resolve to empty, multi-config, first",
@@ -345,6 +351,7 @@ func Test_msgServer_UpdateResolveAddress(t *testing.T) {
 					},
 				},
 			},
+			wantMinGasConsummed: 1,
 		},
 		{
 			name: "success - remove record if new resolve to empty, multi-configs, last",
@@ -382,6 +389,7 @@ func Test_msgServer_UpdateResolveAddress(t *testing.T) {
 					},
 				},
 			},
+			wantMinGasConsummed: 1,
 		},
 		{
 			name: "success - remove record if new resolve to empty, multi-config, not any of existing",
@@ -425,6 +433,7 @@ func Test_msgServer_UpdateResolveAddress(t *testing.T) {
 					},
 				},
 			},
+			wantMinGasConsummed: 1,
 		},
 		{
 			name: "success - expiry not changed",
@@ -449,6 +458,7 @@ func Test_msgServer_UpdateResolveAddress(t *testing.T) {
 					},
 				},
 			},
+			wantMinGasConsummed: dymnstypes.OpGasConfig,
 		},
 		{
 			name: "success - chain-id automatically removed from record if is host chain-id",
@@ -477,6 +487,7 @@ func Test_msgServer_UpdateResolveAddress(t *testing.T) {
 					},
 				},
 			},
+			wantMinGasConsummed: dymnstypes.OpGasConfig,
 		},
 		{
 			name: "success - chain-id automatically removed from record if is host chain-id",
@@ -513,6 +524,7 @@ func Test_msgServer_UpdateResolveAddress(t *testing.T) {
 					},
 				},
 			},
+			wantMinGasConsummed: dymnstypes.OpGasConfig,
 		},
 		{
 			name: "success - chain-id recorded if is NOT host chain-id",
@@ -541,6 +553,7 @@ func Test_msgServer_UpdateResolveAddress(t *testing.T) {
 					},
 				},
 			},
+			wantMinGasConsummed: dymnstypes.OpGasConfig,
 		},
 		{
 			name: "success - do not override record with different chain-id",
@@ -583,6 +596,7 @@ func Test_msgServer_UpdateResolveAddress(t *testing.T) {
 					},
 				},
 			},
+			wantMinGasConsummed: dymnstypes.OpGasConfig,
 		},
 		{
 			name: "success - do not override record with different chain-id",
@@ -631,6 +645,7 @@ func Test_msgServer_UpdateResolveAddress(t *testing.T) {
 					},
 				},
 			},
+			wantMinGasConsummed: dymnstypes.OpGasConfig,
 		},
 	}
 	for _, tt := range tests {
@@ -651,6 +666,15 @@ func Test_msgServer_UpdateResolveAddress(t *testing.T) {
 			tt.msg.Name = recordName
 			resp, err := dymnskeeper.NewMsgServerImpl(dk).UpdateResolveAddress(ctx, tt.msg)
 			laterDymName := dk.GetDymName(ctx, tt.msg.Name)
+
+			defer func() {
+				if tt.wantMinGasConsummed > 0 {
+					require.GreaterOrEqual(t,
+						ctx.GasMeter().GasConsumed(), tt.wantMinGasConsummed,
+						"should consume at least %d gas", tt.wantMinGasConsummed,
+					)
+				}
+			}()
 
 			if tt.wantErr {
 				require.NotEmpty(t, tt.wantErrContains, "mis-configured test case")
@@ -675,11 +699,6 @@ func Test_msgServer_UpdateResolveAddress(t *testing.T) {
 			require.NotNil(t, resp)
 			require.NotNil(t, laterDymName)
 			require.Equal(t, *tt.wantDymName, *laterDymName)
-
-			require.GreaterOrEqual(t,
-				ctx.GasMeter().GasConsumed(), dymnstypes.OpGasConfig,
-				"should consume params gas",
-			)
 		})
 	}
 }

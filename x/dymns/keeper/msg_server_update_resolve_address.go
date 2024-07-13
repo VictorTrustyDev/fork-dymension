@@ -25,8 +25,12 @@ func (k msgServer) UpdateResolveAddress(goCtx context.Context, msg *dymnstypes.M
 	}
 	newConfigIdentity := newConfig.GetIdentity()
 
+	var minimumTxGasRequired sdk.Gas
+
 	existingConfigCount := len(dymName.Configs)
 	if newConfig.IsDelete() {
+		minimumTxGasRequired = 0 // do not charge for delete
+
 		var foundSameConfigIdAtIdx = -1
 		for i, config := range dymName.Configs {
 			if config.GetIdentity() == newConfigIdentity {
@@ -48,6 +52,8 @@ func (k msgServer) UpdateResolveAddress(goCtx context.Context, msg *dymnstypes.M
 			}
 		}
 	} else {
+		minimumTxGasRequired = dymnstypes.OpGasConfig
+
 		if existingConfigCount > 0 {
 			var foundSameConfigId bool
 			for i, config := range dymName.Configs {
@@ -69,9 +75,10 @@ func (k msgServer) UpdateResolveAddress(goCtx context.Context, msg *dymnstypes.M
 		return nil, err
 	}
 
-	minimumTxGas := dymnstypes.OpGasConfig
-	if consumedGas := ctx.GasMeter().GasConsumed(); consumedGas < minimumTxGas {
-		ctx.GasMeter().ConsumeGas(minimumTxGas-consumedGas, "UpdateResolveAddress")
+	if minimumTxGasRequired > 0 {
+		if consumedGas := ctx.GasMeter().GasConsumed(); consumedGas < minimumTxGasRequired {
+			ctx.GasMeter().ConsumeGas(minimumTxGasRequired-consumedGas, "UpdateResolveAddress")
+		}
 	}
 
 	return &dymnstypes.MsgUpdateResolveAddressResponse{}, nil
