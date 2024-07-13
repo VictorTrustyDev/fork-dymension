@@ -22,9 +22,7 @@ func (k msgServer) CancelAdsSellName(goCtx context.Context, msg *dymnstypes.MsgC
 		return nil, err
 	}
 
-	miscParams := k.MiscParams(ctx)
-
-	minimumTxGas := sdk.Gas(miscParams.GasCrudOpenPurchaseOrder)
+	minimumTxGas := dymnstypes.OpGasCloseAds
 	if consumedGas := ctx.GasMeter().GasConsumed(); consumedGas < minimumTxGas {
 		ctx.GasMeter().ConsumeGas(minimumTxGas-consumedGas, "CancelAdsSellName")
 	}

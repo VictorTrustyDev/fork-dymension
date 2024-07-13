@@ -30,7 +30,6 @@ func Test_msgServer_PutAdsSellName(t *testing.T) {
 		moduleParams := dk.GetParams(ctx)
 		moduleParams.Misc.DaysOpenPurchaseOrderDuration = daysProhibitSell
 		moduleParams.Misc.DaysProhibitSell = daysOpenPurchaseOrderDuration
-		moduleParams.Misc.GasCrudOpenPurchaseOrder = 20_000_000
 		err := dk.SetParams(ctx, moduleParams)
 		require.NoError(t, err)
 
@@ -253,7 +252,7 @@ func Test_msgServer_PutAdsSellName(t *testing.T) {
 				}
 
 				require.Less(t,
-					ctx.GasMeter().GasConsumed(), sdk.Gas(moduleParams.Misc.GasCrudOpenPurchaseOrder),
+					ctx.GasMeter().GasConsumed(), dymnstypes.OpGasPutAds,
 					"should not consume params gas on failed operation",
 				)
 				return
@@ -281,7 +280,7 @@ func Test_msgServer_PutAdsSellName(t *testing.T) {
 			require.Equal(t, expectedOpo, *opo)
 
 			require.GreaterOrEqual(t,
-				ctx.GasMeter().GasConsumed(), sdk.Gas(moduleParams.Misc.GasCrudOpenPurchaseOrder),
+				ctx.GasMeter().GasConsumed(), dymnstypes.OpGasPutAds,
 				"should consume params gas",
 			)
 

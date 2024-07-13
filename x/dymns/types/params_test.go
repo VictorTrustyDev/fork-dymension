@@ -36,7 +36,6 @@ func TestNewParams(t *testing.T) {
 			DaysOpenPurchaseOrderDuration:    888,
 			DaysPreservedClosedPurchaseOrder: 88,
 			DaysProhibitSell:                 90,
-			GasCrudOpenPurchaseOrder:         8,
 		},
 	)
 	require.Equal(t, "a", params.Price.PriceDenom)
@@ -49,7 +48,6 @@ func TestNewParams(t *testing.T) {
 	require.Equal(t, int32(888), params.Misc.DaysOpenPurchaseOrderDuration)
 	require.Equal(t, int32(88), params.Misc.DaysPreservedClosedPurchaseOrder)
 	require.Equal(t, int32(90), params.Misc.DaysProhibitSell)
-	require.Equal(t, int32(8), params.Misc.GasCrudOpenPurchaseOrder)
 }
 
 func TestDefaultPriceParams(t *testing.T) {
@@ -350,7 +348,6 @@ func TestMiscParams_Validate(t *testing.T) {
 				p.DaysGracePeriod = 1
 				p.DaysOpenPurchaseOrderDuration = 1
 				p.DaysPreservedClosedPurchaseOrder = 1
-				p.GasCrudOpenPurchaseOrder = 1
 				return p
 			},
 		},
@@ -436,19 +433,6 @@ func TestMiscParams_Validate(t *testing.T) {
 			modifier:        func(p MiscParams) MiscParams { p.DaysProhibitSell = 6; return p },
 			wantErr:         true,
 			wantErrContains: "prohibit sell must be at least 7 days",
-		},
-		{
-			name: "gas CRUD OPO = 0 is valid",
-			modifier: func(p MiscParams) MiscParams {
-				p.GasCrudOpenPurchaseOrder = 0
-				return p
-			},
-		},
-		{
-			name:            "gas CRUD OPO can not be negative",
-			modifier:        func(p MiscParams) MiscParams { p.GasCrudOpenPurchaseOrder = -1; return p },
-			wantErr:         true,
-			wantErrContains: "gas for CRUD operations on OPO cannot be negative",
 		},
 	}
 	for _, tt := range tests {

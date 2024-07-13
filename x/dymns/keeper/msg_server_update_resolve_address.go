@@ -69,6 +69,11 @@ func (k msgServer) UpdateResolveAddress(goCtx context.Context, msg *dymnstypes.M
 		return nil, err
 	}
 
+	minimumTxGas := dymnstypes.OpGasConfig
+	if consumedGas := ctx.GasMeter().GasConsumed(); consumedGas < minimumTxGas {
+		ctx.GasMeter().ConsumeGas(minimumTxGas-consumedGas, "UpdateResolveAddress")
+	}
+
 	return &dymnstypes.MsgUpdateResolveAddressResponse{}, nil
 }
 

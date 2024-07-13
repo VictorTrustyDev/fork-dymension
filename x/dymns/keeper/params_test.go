@@ -40,7 +40,7 @@ func TestGetSetParams(t *testing.T) {
 
 	t.Run("can not set invalid params", func(t *testing.T) {
 		params := dymnstypes.DefaultParams()
-		params.Misc.GasCrudOpenPurchaseOrder = -1
+		params.Misc.DaysGracePeriod = -1
 		require.Error(t, dk.SetParams(ctx, params))
 	})
 }

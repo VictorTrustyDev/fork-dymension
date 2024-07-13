@@ -22,11 +22,6 @@ func Test_msgServer_CancelAdsSellName(t *testing.T) {
 		Time: time.Now().UTC(),
 	})
 
-	moduleParams := dk.GetParams(ctx)
-	moduleParams.Misc.GasCrudOpenPurchaseOrder = 20_000_000
-	err := dk.SetParams(ctx, moduleParams)
-	require.NoError(t, err)
-
 	futureEpoch := ctx.BlockTime().Add(time.Hour).Unix()
 
 	owner := "dym1fl48vsnmsdzcv85q5d2q4z5ajdha8yu38x9fue"
@@ -38,7 +33,7 @@ func Test_msgServer_CancelAdsSellName(t *testing.T) {
 		Controller: owner,
 		ExpireAt:   futureEpoch,
 	}
-	err = dk.SetDymName(ctx, dymName1)
+	err := dk.SetDymName(ctx, dymName1)
 	require.NoError(t, err)
 
 	dymName2 := dymnstypes.DymName{
@@ -237,7 +232,7 @@ func Test_msgServer_CancelAdsSellName(t *testing.T) {
 		require.Empty(t, list, "no historical record should be added")
 
 		require.GreaterOrEqual(t,
-			ctx.GasMeter().GasConsumed(), sdk.Gas(moduleParams.Misc.GasCrudOpenPurchaseOrder),
+			ctx.GasMeter().GasConsumed(), dymnstypes.OpGasCloseAds,
 			"should consume params gas",
 		)
 	})

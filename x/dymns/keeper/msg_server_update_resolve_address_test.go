@@ -663,6 +663,11 @@ func Test_msgServer_UpdateResolveAddress(t *testing.T) {
 				} else {
 					require.Nil(t, laterDymName)
 				}
+
+				require.Less(t,
+					ctx.GasMeter().GasConsumed(), dymnstypes.OpGasConfig,
+					"should not consume params gas on failed operation",
+				)
 				return
 			}
 
@@ -670,6 +675,11 @@ func Test_msgServer_UpdateResolveAddress(t *testing.T) {
 			require.NotNil(t, resp)
 			require.NotNil(t, laterDymName)
 			require.Equal(t, *tt.wantDymName, *laterDymName)
+
+			require.GreaterOrEqual(t,
+				ctx.GasMeter().GasConsumed(), dymnstypes.OpGasConfig,
+				"should consume params gas",
+			)
 		})
 	}
 }

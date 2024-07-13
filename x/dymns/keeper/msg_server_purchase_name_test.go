@@ -24,11 +24,6 @@ func Test_msgServer_PurchaseName(t *testing.T) {
 			Time: now,
 		})
 
-		moduleParams := dk.GetParams(ctx)
-		moduleParams.Misc.GasCrudOpenPurchaseOrder = 20_000_000
-		err := dk.SetParams(ctx, moduleParams)
-		require.NoError(t, err)
-
 		return dk, bk, ctx
 	}
 
@@ -503,7 +498,6 @@ func Test_msgServer_PurchaseName(t *testing.T) {
 
 			require.Empty(t, laterDymNamesOwnedByPreviousBidder, "no reverse record should be made for previous bidder")
 
-			moduleParams := dk.GetParams(ctx)
 			if tt.wantErr {
 				require.Error(t, errPurchaseName, "action should be failed")
 				require.NotEmpty(t, tt.wantErrContains, "mis-configured test case")
@@ -513,7 +507,7 @@ func Test_msgServer_PurchaseName(t *testing.T) {
 				require.False(t, tt.wantOwnershipChanged, "mis-configured test case")
 
 				require.Less(t,
-					ctx.GasMeter().GasConsumed(), sdk.Gas(moduleParams.Misc.GasCrudOpenPurchaseOrder),
+					ctx.GasMeter().GasConsumed(), dymnstypes.OpGasBidAds,
 					"should not consume params gas on failed operation",
 				)
 			} else {
@@ -521,7 +515,7 @@ func Test_msgServer_PurchaseName(t *testing.T) {
 				require.NotNil(t, resp)
 
 				require.GreaterOrEqual(t,
-					ctx.GasMeter().GasConsumed(), sdk.Gas(moduleParams.Misc.GasCrudOpenPurchaseOrder),
+					ctx.GasMeter().GasConsumed(), dymnstypes.OpGasBidAds,
 					"should consume params gas",
 				)
 			}

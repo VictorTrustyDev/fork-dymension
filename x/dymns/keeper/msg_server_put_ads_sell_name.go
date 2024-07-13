@@ -47,7 +47,7 @@ func (k msgServer) PutAdsSellName(goCtx context.Context, msg *dymnstypes.MsgPutA
 		return nil, err
 	}
 
-	minimumTxGas := sdk.Gas(params.Misc.GasCrudOpenPurchaseOrder)
+	minimumTxGas := dymnstypes.OpGasPutAds
 	if consumedGas := ctx.GasMeter().GasConsumed(); consumedGas < minimumTxGas {
 		ctx.GasMeter().ConsumeGas(minimumTxGas-consumedGas, "PutAdsSellName")
 	}

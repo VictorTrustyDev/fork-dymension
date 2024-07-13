@@ -51,8 +51,7 @@ func (k msgServer) PurchaseName(goCtx context.Context, msg *dymnstypes.MsgPurcha
 		}
 	}
 
-	miscParams := k.MiscParams(ctx)
-	minimumTxGas := sdk.Gas(miscParams.GasCrudOpenPurchaseOrder)
+	minimumTxGas := dymnstypes.OpGasBidAds
 	if consumedGas := ctx.GasMeter().GasConsumed(); consumedGas < minimumTxGas {
 		ctx.GasMeter().ConsumeGas(minimumTxGas-consumedGas, "PurchaseName")
 	}

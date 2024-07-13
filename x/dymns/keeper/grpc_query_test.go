@@ -16,7 +16,7 @@ func Test_queryServer_Params(t *testing.T) {
 	dk, _, _, ctx := testkeeper.DymNSKeeper(t)
 
 	params := dk.GetParams(ctx)
-	params.Misc.GasCrudOpenPurchaseOrder++
+	params.Misc.DaysProhibitSell++
 	err := dk.SetParams(ctx, params)
 	require.NoError(t, err)
 

@@ -116,13 +116,4 @@ message MiscParams {
   int32 days_prohibit_sell = 6 [
     (gogoproto.moretags) = "yaml:\"days_prohibit_sell\""
   ];
-
-  // Number of gas to be charged for CRUD operations on OPOs.
-  // Note:
-  // - Create operation is when owner create an OPO to sell a Dym-Name.
-  // - Update operation is when user place bid on an OPO.
-  // - Delete operation is when owner close an OPO.
-  int32 gas_crud_open_purchase_order = 7 [
-    (gogoproto.moretags) = "yaml:\"gas_crud_open_purchase_order\""
-  ];
 }

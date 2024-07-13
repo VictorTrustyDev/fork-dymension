@@ -72,7 +72,6 @@ func DefaultMiscParams() MiscParams {
 		DaysOpenPurchaseOrderDuration:    3,
 		DaysPreservedClosedPurchaseOrder: 7,
 		DaysProhibitSell:                 30,
-		GasCrudOpenPurchaseOrder:         5_000_000,
 	}
 }
 
@@ -271,10 +270,6 @@ func validateMiscParams(i interface{}) error {
 
 	if m.DaysProhibitSell < 7 {
 		return ErrValidationFailed.Wrap("prohibit sell must be at least 7 days")
-	}
-
-	if m.GasCrudOpenPurchaseOrder < 0 {
-		return ErrValidationFailed.Wrap("gas for CRUD operations on OPO cannot be negative")
 	}
 
 	return nil
