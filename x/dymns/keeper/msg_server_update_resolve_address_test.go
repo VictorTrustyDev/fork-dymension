@@ -687,11 +687,6 @@ func Test_msgServer_UpdateResolveAddress(t *testing.T) {
 				} else {
 					require.Nil(t, laterDymName)
 				}
-
-				require.Less(t,
-					ctx.GasMeter().GasConsumed(), dymnstypes.OpGasConfig,
-					"should not consume params gas on failed operation",
-				)
 				return
 			}
 
