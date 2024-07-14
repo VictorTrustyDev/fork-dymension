@@ -9,7 +9,7 @@ import (
 func TestStorePrefixes(t *testing.T) {
 	t.Run("ensure key prefixes are not mistakenly modified", func(t *testing.T) {
 		require.Equal(t, []byte{0x01}, KeyPrefixDymName, "do not change it, will break the app")
-		require.Equal(t, []byte{0x02}, KeyPrefixDymNameOwnedByAccount, "do not change it, will break the app")
+		require.Equal(t, []byte{0x02}, KeyPrefixRvlDymNameOwnedByAccount, "do not change it, will break the app")
 		require.Equal(t, []byte{0x03}, KeyPrefixOpenPurchaseOrder, "do not change it, will break the app")
 		require.Equal(t, []byte{0x05}, KeyPrefixHistoricalOpenPurchaseOrders, "do not change it, will break the app")
 		require.Equal(t, []byte{0x06}, KeyPrefixMinExpiryHistoricalOpenPurchaseOrders, "do not change it, will break the app")
@@ -38,7 +38,7 @@ func TestKeys(t *testing.T) {
 	} {
 		t.Run(bech32Address, func(t *testing.T) {
 			accAddr := sdk.MustAccAddressFromBech32(bech32Address)
-			require.Equal(t, append(KeyPrefixDymNameOwnedByAccount, accAddr.Bytes()...), DymNamesOwnedByAccountKey(accAddr))
+			require.Equal(t, append(KeyPrefixRvlDymNameOwnedByAccount, accAddr.Bytes()...), DymNamesOwnedByAccountRvlKey(accAddr))
 		})
 	}
 }

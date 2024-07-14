@@ -20,8 +20,9 @@ const (
 
 // prefix bytes for the DymNS persistent store
 const (
-	prefixDymName = iota + 1
-	prefixDymNameOwnedByAccount
+	prefixDymName                  = iota + 1
+	prefixRvlDymNameOwnedByAccount // reverse lookup store
+	//prefixRvlConfiguredAddressToDymNameInclude // reverse lookup store
 	prefixOpenPurchaseOrder
 	prefixActiveOpenPurchaseOrdersExpiration
 	prefixHistoricalOpenPurchaseOrders
@@ -29,8 +30,9 @@ const (
 )
 
 var (
-	KeyPrefixDymName                               = []byte{prefixDymName}
-	KeyPrefixDymNameOwnedByAccount                 = []byte{prefixDymNameOwnedByAccount}
+	KeyPrefixDymName                  = []byte{prefixDymName}
+	KeyPrefixRvlDymNameOwnedByAccount = []byte{prefixRvlDymNameOwnedByAccount}
+	//KeyPrefixRvlConfiguredAddressToDymNameInclude  = []byte{prefixRvlConfiguredAddressToDymNameInclude}
 	KeyPrefixOpenPurchaseOrder                     = []byte{prefixOpenPurchaseOrder}
 	KeyPrefixHistoricalOpenPurchaseOrders          = []byte{prefixHistoricalOpenPurchaseOrders}
 	KeyPrefixMinExpiryHistoricalOpenPurchaseOrders = []byte{prefixMinExpiryHistoricalOpenPurchaseOrders}
@@ -45,9 +47,9 @@ func DymNameKey(name string) []byte {
 	return append(KeyPrefixDymName, []byte(name)...)
 }
 
-// DymNamesOwnedByAccountKey returns a key for Dym-Names owned by an account
-func DymNamesOwnedByAccountKey(owner sdk.AccAddress) []byte {
-	return append(KeyPrefixDymNameOwnedByAccount, owner.Bytes()...)
+// DymNamesOwnedByAccountRvlKey returns a key for reverse lookup for Dym-Names owned by an account
+func DymNamesOwnedByAccountRvlKey(owner sdk.AccAddress) []byte {
+	return append(KeyPrefixRvlDymNameOwnedByAccount, owner.Bytes()...)
 }
 
 // OpenPurchaseOrderKey returns a key for open purchase order for a Dym-Name

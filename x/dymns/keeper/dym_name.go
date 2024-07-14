@@ -85,13 +85,14 @@ func (k Keeper) GetAllNonExpiredDymNames(ctx sdk.Context, nowEpoch int64) (list 
 	return list
 }
 
+// SetReverseMappingOwnerToOwnedDymName stores a reverse mapping from owner to owned Dym-Name into the KVStore.
 func (k Keeper) SetReverseMappingOwnerToOwnedDymName(ctx sdk.Context, owner, name string) error {
 	_, bzAccAddr, err := bech32.DecodeAndConvert(owner)
 	if err != nil {
 		return dymnstypes.ErrInvalidOwner.Wrap(owner)
 	}
 
-	dymNamesOwnedByAccountKey := dymnstypes.DymNamesOwnedByAccountKey(bzAccAddr)
+	dymNamesOwnedByAccountKey := dymnstypes.DymNamesOwnedByAccountRvlKey(bzAccAddr)
 
 	var existingOwnedDymNames dymnstypes.OwnedDymNames
 
@@ -101,6 +102,7 @@ func (k Keeper) SetReverseMappingOwnerToOwnedDymName(ctx sdk.Context, owner, nam
 		k.cdc.MustUnmarshal(bz, &existingOwnedDymNames)
 		for _, owned := range existingOwnedDymNames.DymNames {
 			if owned == name {
+				// reverse lookup already exists
 				return nil
 			}
 		}
@@ -120,6 +122,7 @@ func (k Keeper) SetReverseMappingOwnerToOwnedDymName(ctx sdk.Context, owner, nam
 	return nil
 }
 
+// GetDymNamesOwnedBy returns all Dym-Names owned by the account address.
 func (k Keeper) GetDymNamesOwnedBy(
 	ctx sdk.Context, owner string, nowEpoch int64,
 ) ([]dymnstypes.DymName, error) {
@@ -128,7 +131,7 @@ func (k Keeper) GetDymNamesOwnedBy(
 		return nil, dymnstypes.ErrInvalidOwner.Wrap(owner)
 	}
 
-	dymNamesOwnedByAccountKey := dymnstypes.DymNamesOwnedByAccountKey(bzAccAddr)
+	dymNamesOwnedByAccountKey := dymnstypes.DymNamesOwnedByAccountRvlKey(bzAccAddr)
 
 	var existingOwnedDymNames dymnstypes.OwnedDymNames
 
@@ -163,7 +166,7 @@ func (k Keeper) RemoveReverseMappingOwnerToOwnedDymName(ctx sdk.Context, owner, 
 		return dymnstypes.ErrInvalidOwner.Wrapf("owner `%s` is not a valid bech32 account address: %v", owner, err)
 	}
 
-	dymNamesOwnedByAccountKey := dymnstypes.DymNamesOwnedByAccountKey(accAddr)
+	dymNamesOwnedByAccountKey := dymnstypes.DymNamesOwnedByAccountRvlKey(accAddr)
 
 	var existingOwnedDymNames dymnstypes.OwnedDymNames
 
