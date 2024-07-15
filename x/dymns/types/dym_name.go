@@ -3,7 +3,9 @@ package types
 import (
 	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/bech32"
 	dymnsutils "github.com/dymensionxyz/dymension/v3/x/dymns/utils"
+	"github.com/ethereum/go-ethereum/common"
 	"strings"
 	"time"
 )
@@ -66,6 +68,10 @@ func (m *DymNameConfig) Validate() error {
 		return ErrValidationFailed.Wrap("dym name config path must be a valid dym name")
 	}
 
+	if m.Value != strings.ToLower(m.Value) {
+		return ErrValidationFailed.Wrap("dym name config value must be lowercase")
+	}
+
 	if m.Type == DymNameConfigType_NAME {
 		if !m.IsDelete() && !dymnsutils.IsValidBech32AccountAddress(m.Value, false) {
 			return ErrValidationFailed.Wrap("dym name config value must be a valid bech32 account address")
@@ -119,18 +125,43 @@ func (m DymNameConfig) IsDelete() bool {
 }
 
 func (m *DymName) GetAddressReverseMappingRecords() (
-	configuredAddressToDymNames ReverseLookupDymNames,
-	coinType60HexAddressToDymNames ReverseLookupDymNames,
+	configuredAddressesToDymNames map[string]ReverseLookupDymNames,
+	coinType60HexAddressesToDymNames map[string]ReverseLookupDymNames,
 ) {
+	// TODO DymNS: call this method from the keeper, to cleanup before modify the Dym-Name configuration
+	// TODO DymNS: call this method from the keeper, to update after modify the Dym-Name configuration
 	if err := m.Validate(); err != nil {
 		// should validate before calling this method
 		panic(err)
 	}
 
-	defer func() {
-		configuredAddressToDymNames = configuredAddressToDymNames.Distinct()
-		coinType60HexAddressToDymNames = coinType60HexAddressToDymNames.Distinct()
-	}()
+	configuredAddressesToDymNames = make(map[string]ReverseLookupDymNames)
+	coinType60HexAddressesToDymNames = make(map[string]ReverseLookupDymNames)
+
+	addConfiguredAddressToDymNames := func(address string, dymName string) {
+		existing, _ := configuredAddressesToDymNames[address]
+		configuredAddressesToDymNames[address] = existing.Combine(ReverseLookupDymNames{
+			DymNames: []string{
+				dymName,
+			},
+		})
+	}
+
+	addCoinType60HexAddressToDymNames := func(accAddr sdk.AccAddress, dymName string) {
+		var strAddr string
+		if len(accAddr.Bytes()) == 32 { // Interchain Account
+			strAddr = common.BytesToHash(accAddr.Bytes()).String()
+		} else {
+			strAddr = common.BytesToAddress(accAddr.Bytes()).String()
+		}
+		strAddr = strings.ToLower(strAddr)
+		existing, _ := coinType60HexAddressesToDymNames[strAddr]
+		coinType60HexAddressesToDymNames[strAddr] = existing.Combine(ReverseLookupDymNames{
+			DymNames: []string{
+				dymName,
+			},
+		})
+	}
 
 	var nameConfigs []DymNameConfig
 	for _, config := range m.Configs {
@@ -148,21 +179,52 @@ func (m *DymName) GetAddressReverseMappingRecords() (
 	}
 
 	if defaultConfig == nil {
-		defaultConfig = &DymNameConfig{
+		// add a fake record to be used to generate default address
+		nameConfigs = append(nameConfigs, DymNameConfig{
 			Type:    DymNameConfigType_NAME,
 			ChainId: "",
 			Path:    "",
 			Value:   m.Owner,
-		}
+		})
 	}
 
-	//defaultConfigAccAddr, err := sdk.AccAddressFromBech32(defaultConfig.Value)
-	//if err != nil {
-	//	// should not happen as configuration should be validated before calling this method
-	//	panic(err)
-	//}
+	for _, config := range nameConfigs {
+		if config.Value == "" {
+			continue
+		}
 
-	// TODO DymNS: implement this
+		if !dymnsutils.IsValidBech32AccountAddress(config.Value, false) {
+			// should not happen as configuration should be validated before calling this method.
+			// But code still be kept to be aware of the possibility of future changes.
+			panic("current implementation only accept bech32 account address")
+		}
+
+		if config.ChainId == "" && config.Path == "" {
+			// default config
+
+			accAddr, err := sdk.AccAddressFromBech32(config.Value)
+			if err != nil {
+				// should not happen as configuration should be validated before calling this method
+				panic(err)
+			}
+
+			addConfiguredAddressToDymNames(config.Value, m.Name)
+			addCoinType60HexAddressToDymNames(accAddr, m.Name)
+
+			continue
+		}
+
+		_, bz, err := bech32.DecodeAndConvert(config.Value)
+		if err != nil {
+			// should not happen as configuration should be validated before calling this method
+			// But code still be kept to be aware of the possibility of future changes.
+			panic(err)
+		}
+
+		addConfiguredAddressToDymNames(config.Value, m.Name)
+		addCoinType60HexAddressToDymNames(bz, m.Name)
+	}
+
 	return
 }
 

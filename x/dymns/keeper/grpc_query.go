@@ -12,6 +12,9 @@ import (
 
 var _ dymnstypes.QueryServer = queryServer{}
 
+// TODO DymNS: method to reverse resolve address by bech32 address
+// TODO DymNS: method to reverse resolve address by hex address
+
 type queryServer struct {
 	Keeper
 }

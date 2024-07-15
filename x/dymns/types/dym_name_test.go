@@ -2,6 +2,7 @@ package types
 
 import (
 	"github.com/stretchr/testify/require"
+	"reflect"
 	"sort"
 	"testing"
 	"time"
@@ -307,6 +308,15 @@ func TestDymNameConfig_Validate(t *testing.T) {
 			Value:   "dym1fl48vsnmsdzcv85q5d2q4z5ajdha8yu38x9fue",
 		},
 		{
+			name:            "not accept hex address value",
+			Type:            DymNameConfigType_NAME,
+			ChainId:         "",
+			Path:            "",
+			Value:           "0x1234567890123456789012345678901234567890",
+			wantErr:         true,
+			wantErrContains: "must be a valid bech32 account address",
+		},
+		{
 			name:            "not accept unknown type",
 			Type:            DymNameConfigType_UNKNOWN,
 			ChainId:         "",
@@ -364,6 +374,15 @@ func TestDymNameConfig_Validate(t *testing.T) {
 			Value:           "0x01",
 			wantErr:         true,
 			wantErrContains: "dym name config value must be a valid bech32 account address",
+		},
+		{
+			name:            "reject value not normalized",
+			Type:            DymNameConfigType_NAME,
+			ChainId:         "",
+			Path:            "",
+			Value:           "Dym1fl48vsnmsdzcv85q5d2q4z5ajdha8yu38x9fue",
+			wantErr:         true,
+			wantErrContains: "must be lowercase",
 		},
 	}
 	for _, tt := range tests {
@@ -580,6 +599,435 @@ func TestDymNameConfig_IsDelete(t *testing.T) {
 	require.False(t, DymNameConfig{
 		Value: "1",
 	}.IsDelete(), "if value is not empty then it's not delete")
+}
+
+//goland:noinspection SpellCheckingInspection
+func TestDymName_GetAddressReverseMappingRecords(t *testing.T) {
+	const dymName = "a"
+	const ownerBech32 = "dym1zg69v7yszg69v7yszg69v7yszg69v7ys8xdv96"
+	const ownerBech32AtNim = "nim1zg69v7yszg69v7yszg69v7yszg69v7yspkhdt9"
+	const ownerHex = "0x1234567890123456789012345678901234567890"
+	const bondedPoolBech32 = "dym1fl48vsnmsdzcv85q5d2q4z5ajdha8yu38x9fue"
+	const bondedPoolHex = "0x4fea76427b8345861e80a3540a8a9d936fd39391"
+
+	const icaBech32 = "dym1zg69v7yszg69v7yszg69v7yszg69v7yszg69v7yszg69v7yszg6qrz80ul"
+	const icaBech32AtNim = "nim1zg69v7yszg69v7yszg69v7yszg69v7yszg69v7yszg69v7yszg6qe9zz9m"
+	const icaHex = "0x1234567890123456789012345678901234567890123456789012345678901234"
+
+	tests := []struct {
+		name                                 string
+		configs                              []DymNameConfig
+		wantPanic                            bool
+		wantConfiguredAddressesToDymNames    map[string]ReverseLookupDymNames
+		wantCoinType60HexAddressesToDymNames map[string]ReverseLookupDymNames
+	}{
+		{
+			name: "pass",
+			configs: []DymNameConfig{
+				{
+					Type:    DymNameConfigType_NAME,
+					ChainId: "",
+					Path:    "",
+					Value:   ownerBech32,
+				},
+				{
+					Type:    DymNameConfigType_NAME,
+					ChainId: "nim_1122-1",
+					Path:    "",
+					Value:   ownerBech32AtNim,
+				},
+				{
+					Type:    DymNameConfigType_NAME,
+					ChainId: "",
+					Path:    "bonded-pool",
+					Value:   bondedPoolBech32,
+				},
+			},
+			wantConfiguredAddressesToDymNames: map[string]ReverseLookupDymNames{
+				ownerBech32: {
+					DymNames: []string{dymName},
+				},
+				ownerBech32AtNim: {
+					DymNames: []string{dymName},
+				},
+				bondedPoolBech32: {
+					DymNames: []string{dymName},
+				},
+			},
+			wantCoinType60HexAddressesToDymNames: map[string]ReverseLookupDymNames{
+				ownerHex: {
+					DymNames: []string{dymName},
+				},
+				bondedPoolHex: {
+					DymNames: []string{dymName},
+				},
+			},
+		},
+		{
+			name: "pass - hex address is parsed correctly",
+			configs: []DymNameConfig{
+				{
+					Type:    DymNameConfigType_NAME,
+					ChainId: "",
+					Path:    "",
+					Value:   ownerBech32,
+				},
+				{
+					Type:    DymNameConfigType_NAME,
+					ChainId: "",
+					Path:    "bonded-pool",
+					Value:   bondedPoolBech32,
+				},
+			},
+			wantConfiguredAddressesToDymNames: map[string]ReverseLookupDymNames{
+				ownerBech32: {
+					DymNames: []string{dymName},
+				},
+				bondedPoolBech32: {
+					DymNames: []string{dymName},
+				},
+			},
+			wantCoinType60HexAddressesToDymNames: map[string]ReverseLookupDymNames{
+				ownerHex: {
+					DymNames: []string{dymName},
+				},
+				bondedPoolHex: {
+					DymNames: []string{dymName},
+				},
+			},
+		},
+		{
+			name: "pass - configured bech32 address is kept as is",
+			configs: []DymNameConfig{
+				{
+					Type:    DymNameConfigType_NAME,
+					ChainId: "",
+					Path:    "",
+					Value:   ownerBech32,
+				},
+				{
+					Type:    DymNameConfigType_NAME,
+					ChainId: "nim_1122-1",
+					Path:    "",
+					Value:   ownerBech32AtNim, // not dym1, it's nim1
+				},
+			},
+			wantConfiguredAddressesToDymNames: map[string]ReverseLookupDymNames{
+				ownerBech32: {
+					DymNames: []string{dymName},
+				},
+				ownerBech32AtNim: {
+					DymNames: []string{dymName},
+				},
+			},
+			wantCoinType60HexAddressesToDymNames: map[string]ReverseLookupDymNames{
+				ownerHex: {
+					DymNames: []string{dymName},
+				},
+			},
+		},
+		{
+			name: "pass - hex address is distinct",
+			configs: []DymNameConfig{
+				{
+					Type:    DymNameConfigType_NAME,
+					ChainId: "",
+					Path:    "",
+					Value:   ownerBech32,
+				},
+				{
+					Type:    DymNameConfigType_NAME,
+					ChainId: "nim_1122-1",
+					Path:    "",
+					Value:   ownerBech32AtNim, // not dym1, it's nim1, but still the owner
+				},
+			},
+			wantConfiguredAddressesToDymNames: map[string]ReverseLookupDymNames{
+				ownerBech32: {
+					DymNames: []string{dymName},
+				},
+				ownerBech32AtNim: {
+					DymNames: []string{dymName},
+				},
+			},
+			wantCoinType60HexAddressesToDymNames: map[string]ReverseLookupDymNames{
+				ownerHex: { // only one
+					DymNames: []string{dymName},
+				},
+			},
+		},
+		{
+			name: "pass - able to detect default config address when not configured",
+			configs: []DymNameConfig{
+				{
+					Type:    DymNameConfigType_NAME,
+					ChainId: "",
+					Path:    "bonded-pool",
+					Value:   bondedPoolBech32,
+				},
+				// not include default config
+			},
+			wantConfiguredAddressesToDymNames: map[string]ReverseLookupDymNames{
+				ownerBech32: { // default config resolved to owner
+					DymNames: []string{dymName},
+				},
+				bondedPoolBech32: {
+					DymNames: []string{dymName},
+				},
+			},
+			wantCoinType60HexAddressesToDymNames: map[string]ReverseLookupDymNames{
+				ownerHex: { // default config resolved to owner
+					DymNames: []string{dymName},
+				},
+				bondedPoolHex: {
+					DymNames: []string{dymName},
+				},
+			},
+		},
+		{
+			name: "pass - respect default config when it is not owner",
+			configs: []DymNameConfig{
+				{
+					Type:    DymNameConfigType_NAME,
+					ChainId: "",
+					Path:    "",
+					Value:   bondedPoolBech32, // not the owner
+				},
+			},
+			wantConfiguredAddressesToDymNames: map[string]ReverseLookupDymNames{
+				bondedPoolBech32: { // respect
+					DymNames: []string{dymName},
+				},
+			},
+			wantCoinType60HexAddressesToDymNames: map[string]ReverseLookupDymNames{
+				bondedPoolHex: { // respect
+					DymNames: []string{dymName},
+				},
+			},
+		},
+		{
+			name: "pass - respect default config when it is not owner",
+			configs: []DymNameConfig{
+				{
+					Type:    DymNameConfigType_NAME,
+					ChainId: "",
+					Path:    "",
+					Value:   bondedPoolBech32, // not the owner
+				},
+				{
+					Type:    DymNameConfigType_NAME,
+					ChainId: "",
+					Path:    "a",
+					Value:   bondedPoolBech32,
+				},
+			},
+			wantConfiguredAddressesToDymNames: map[string]ReverseLookupDymNames{
+				bondedPoolBech32: { // respect
+					DymNames: []string{dymName},
+				},
+			},
+			wantCoinType60HexAddressesToDymNames: map[string]ReverseLookupDymNames{
+				bondedPoolHex: { // respect
+					DymNames: []string{dymName},
+				},
+			},
+		},
+		{
+			name: "pass - respect default config when it is not owner",
+			configs: []DymNameConfig{
+				{
+					Type:    DymNameConfigType_NAME,
+					ChainId: "",
+					Path:    "",
+					Value:   bondedPoolBech32, // not owner
+				},
+				{
+					Type:    DymNameConfigType_NAME,
+					ChainId: "nim_1122-1",
+					Path:    "",
+					Value:   ownerBech32AtNim, // but this is owner, in different bech32 prefix
+				},
+			},
+			wantConfiguredAddressesToDymNames: map[string]ReverseLookupDymNames{
+				ownerBech32AtNim: {
+					DymNames: []string{dymName},
+				},
+				bondedPoolBech32: {
+					DymNames: []string{dymName},
+				},
+			},
+			wantCoinType60HexAddressesToDymNames: map[string]ReverseLookupDymNames{
+				ownerHex: {
+					DymNames: []string{dymName},
+				},
+				bondedPoolHex: {
+					DymNames: []string{dymName},
+				},
+			},
+		},
+		{
+			name:      "fail - not accept malformed config",
+			configs:   []DymNameConfig{{}},
+			wantPanic: true,
+		},
+		{
+			name: "fail - not accept malformed config, not bech32 address value",
+			configs: []DymNameConfig{{
+				Type:    DymNameConfigType_NAME,
+				ChainId: "",
+				Path:    "a",
+				Value:   "0x1234567890123456789012345678901234567890",
+			}},
+			wantPanic: true,
+		},
+		{
+			name: "fail - not accept malformed config, default config is not bech32 address of host",
+			configs: []DymNameConfig{{
+				Type:    DymNameConfigType_NAME,
+				ChainId: "",
+				Path:    "",
+				Value:   ownerBech32AtNim,
+			}},
+			wantPanic: true,
+		},
+		{
+			name: "fail - not accept malformed config, not valid bech32 address",
+			configs: []DymNameConfig{{
+				Type:    DymNameConfigType_NAME,
+				ChainId: "",
+				Path:    "a",
+				Value:   ownerBech32 + "a",
+			}},
+			wantPanic: true,
+		},
+		{
+			name: "fail - not accept malformed config, default config is not bech32 address of host",
+			configs: []DymNameConfig{{
+				Type:    DymNameConfigType_NAME,
+				ChainId: "",
+				Path:    "",
+				Value:   ownerBech32 + "a",
+			}},
+			wantPanic: true,
+		},
+		{
+			name: "pass - ignore empty value config",
+			configs: []DymNameConfig{
+				{
+					Type:    DymNameConfigType_NAME,
+					ChainId: "",
+					Path:    "",
+					Value:   ownerBech32,
+				},
+				{
+					Type:    DymNameConfigType_NAME,
+					ChainId: "nim_1122-1",
+					Path:    "",
+					Value:   ownerBech32AtNim,
+				},
+				{
+					Type:    DymNameConfigType_NAME,
+					ChainId: "",
+					Path:    "bonded-pool",
+					Value:   "", // empty value
+				},
+			},
+			wantConfiguredAddressesToDymNames: map[string]ReverseLookupDymNames{
+				ownerBech32: {
+					DymNames: []string{dymName},
+				},
+				ownerBech32AtNim: {
+					DymNames: []string{dymName},
+				},
+			},
+			wantCoinType60HexAddressesToDymNames: map[string]ReverseLookupDymNames{
+				ownerHex: {
+					DymNames: []string{dymName},
+				},
+			},
+		},
+		{
+			name: "pass - allow Interchain Account",
+			configs: []DymNameConfig{
+				{
+					Type:    DymNameConfigType_NAME,
+					ChainId: "",
+					Path:    "",
+					Value:   icaBech32,
+				},
+				{
+					Type:    DymNameConfigType_NAME,
+					ChainId: "nim_1122-1",
+					Path:    "ica",
+					Value:   icaBech32AtNim,
+				},
+				{
+					Type:    DymNameConfigType_NAME,
+					ChainId: "nim_1122-1",
+					Path:    "",
+					Value:   ownerBech32AtNim,
+				},
+				{
+					Type:    DymNameConfigType_NAME,
+					ChainId: "",
+					Path:    "bonded-pool",
+					Value:   bondedPoolBech32,
+				},
+			},
+			wantConfiguredAddressesToDymNames: map[string]ReverseLookupDymNames{
+				ownerBech32AtNim: {
+					DymNames: []string{dymName},
+				},
+				bondedPoolBech32: {
+					DymNames: []string{dymName},
+				},
+				icaBech32: {
+					DymNames: []string{dymName},
+				},
+				icaBech32AtNim: {
+					DymNames: []string{dymName},
+				},
+			},
+			wantCoinType60HexAddressesToDymNames: map[string]ReverseLookupDymNames{
+				ownerHex: {
+					DymNames: []string{dymName},
+				},
+				bondedPoolHex: {
+					DymNames: []string{dymName},
+				},
+				icaHex: {
+					DymNames: []string{dymName},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := &DymName{
+				Name:       dymName,
+				Owner:      ownerBech32,
+				Controller: ownerBech32,
+				ExpireAt:   1,
+				Configs:    tt.configs,
+			}
+
+			if tt.wantPanic {
+				require.Panics(t, func() {
+					_, _ = m.GetAddressReverseMappingRecords()
+				})
+
+				return
+			}
+
+			gotConfiguredAddressesToDymNames, gotCoinType60HexAddressesToDymNames := m.GetAddressReverseMappingRecords()
+			if !reflect.DeepEqual(gotConfiguredAddressesToDymNames, tt.wantConfiguredAddressesToDymNames) {
+				t.Errorf("gotConfiguredAddressesToDymNames = %v, want %v", gotConfiguredAddressesToDymNames, tt.wantConfiguredAddressesToDymNames)
+			}
+			if !reflect.DeepEqual(gotCoinType60HexAddressesToDymNames, tt.wantCoinType60HexAddressesToDymNames) {
+				t.Errorf("gotCoinType60HexAddressesToDymNames = %v, want %v", gotCoinType60HexAddressesToDymNames, tt.wantCoinType60HexAddressesToDymNames)
+			}
+		})
+	}
 }
 
 func TestReverseLookupDymNames_Distinct(t *testing.T) {

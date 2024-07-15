@@ -169,7 +169,7 @@ func (k Keeper) RemoveReverseMappingOwnerToOwnedDymName(ctx sdk.Context, owner, 
 
 	dymNamesOwnedByAccountKey := dymnstypes.DymNamesOwnedByAccountRvlKey(accAddr)
 
-	var existingOwnedDymNames dymnstypes.ReverseLookupDymNames
+	var ownedDymNames dymnstypes.ReverseLookupDymNames
 
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get(dymNamesOwnedByAccountKey)
@@ -178,28 +178,24 @@ func (k Keeper) RemoveReverseMappingOwnerToOwnedDymName(ctx sdk.Context, owner, 
 		return nil
 	}
 
-	k.cdc.MustUnmarshal(bz, &existingOwnedDymNames)
+	k.cdc.MustUnmarshal(bz, &ownedDymNames)
 
-	var newOwnedDymNames []string
-	for _, owned := range existingOwnedDymNames.DymNames {
-		if owned == name {
-			continue
-		}
-		newOwnedDymNames = append(newOwnedDymNames, owned)
-	}
-	if len(newOwnedDymNames) == len(existingOwnedDymNames.DymNames) {
+	newOwnedDymNames := ownedDymNames.Exclude(dymnstypes.ReverseLookupDymNames{
+		DymNames: []string{name},
+	})
+
+	if len(newOwnedDymNames.DymNames) == len(ownedDymNames.DymNames) {
 		// no mapping to remove
 		return nil
 	}
 
-	if len(newOwnedDymNames) == 0 {
+	if len(newOwnedDymNames.DymNames) == 0 {
 		// no more owned dym-names, remove the mapping
 		store.Delete(dymNamesOwnedByAccountKey)
 		return nil
 	}
 
-	existingOwnedDymNames.DymNames = newOwnedDymNames
-	bz = k.cdc.MustMarshal(&existingOwnedDymNames)
+	bz = k.cdc.MustMarshal(&newOwnedDymNames)
 	store.Set(dymNamesOwnedByAccountKey, bz)
 
 	return nil
@@ -223,6 +219,7 @@ func (k Keeper) PruneDymName(ctx sdk.Context, name string) error {
 	if err := k.RemoveReverseMappingOwnerToOwnedDymName(ctx, dymName.Owner, dymName.Name); err != nil {
 		return err
 	}
+	// TODO DymNS: call GetAddressReverseMappingRecords and remove the reverse mapping
 
 	// remove config
 	// This seems not necessary because we are going to remove the record anyway,

@@ -11,6 +11,8 @@ import (
 
 // TODO DymNS: fallback to host chain address if chain-id is RollApp and not exists in configuration
 
+// TODO DymNS: call GetAddressReverseMappingRecords and remove the reverse mapping of previous config
+
 func (k msgServer) UpdateResolveAddress(goCtx context.Context, msg *dymnstypes.MsgUpdateResolveAddress) (*dymnstypes.MsgUpdateResolveAddressResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
