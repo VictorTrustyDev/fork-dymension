@@ -386,9 +386,9 @@ func TestDymNameConfig_Validate(t *testing.T) {
 	}
 }
 
-func TestOwnedDymNames_Validate(t *testing.T) {
+func TestReverseLookupDymNames_Validate(t *testing.T) {
 	t.Run("nil obj", func(t *testing.T) {
-		m := (*OwnedDymNames)(nil)
+		m := (*ReverseLookupDymNames)(nil)
 		require.Error(t, m.Validate())
 	})
 
@@ -399,7 +399,7 @@ func TestOwnedDymNames_Validate(t *testing.T) {
 		wantErrContains string
 	}{
 		{
-			name:     "valid owned dym name",
+			name:     "valid reverse lookup record",
 			DymNames: []string{"bonded-pool", "not-bonded-pool"},
 		},
 		{
@@ -410,18 +410,18 @@ func TestOwnedDymNames_Validate(t *testing.T) {
 			name:            "bad dym name",
 			DymNames:        []string{"bonded-pool", "-not-bonded-pool"},
 			wantErr:         true,
-			wantErrContains: "owned dym name is not a valid dym name:",
+			wantErrContains: "invalid dym name:",
 		},
 		{
 			name:            "bad dym name",
 			DymNames:        []string{"-a"},
 			wantErr:         true,
-			wantErrContains: "owned dym name is not a valid dym name:",
+			wantErrContains: "invalid dym name:",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			m := &OwnedDymNames{
+			m := &ReverseLookupDymNames{
 				DymNames: tt.DymNames,
 			}
 

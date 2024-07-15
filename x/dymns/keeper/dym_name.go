@@ -95,7 +95,7 @@ func (k Keeper) SetReverseMappingOwnerToOwnedDymName(ctx sdk.Context, owner, nam
 
 	dymNamesOwnedByAccountKey := dymnstypes.DymNamesOwnedByAccountRvlKey(bzAccAddr)
 
-	var existingOwnedDymNames dymnstypes.OwnedDymNames
+	var existingOwnedDymNames dymnstypes.ReverseLookupDymNames
 
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get(dymNamesOwnedByAccountKey)
@@ -110,7 +110,7 @@ func (k Keeper) SetReverseMappingOwnerToOwnedDymName(ctx sdk.Context, owner, nam
 
 		existingOwnedDymNames.DymNames = append(existingOwnedDymNames.DymNames, name)
 	} else {
-		existingOwnedDymNames = dymnstypes.OwnedDymNames{
+		existingOwnedDymNames = dymnstypes.ReverseLookupDymNames{
 			DymNames: []string{
 				name,
 			},
@@ -134,7 +134,7 @@ func (k Keeper) GetDymNamesOwnedBy(
 
 	dymNamesOwnedByAccountKey := dymnstypes.DymNamesOwnedByAccountRvlKey(bzAccAddr)
 
-	var existingOwnedDymNames dymnstypes.OwnedDymNames
+	var existingOwnedDymNames dymnstypes.ReverseLookupDymNames
 
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get(dymNamesOwnedByAccountKey)
@@ -169,7 +169,7 @@ func (k Keeper) RemoveReverseMappingOwnerToOwnedDymName(ctx sdk.Context, owner, 
 
 	dymNamesOwnedByAccountKey := dymnstypes.DymNamesOwnedByAccountRvlKey(accAddr)
 
-	var existingOwnedDymNames dymnstypes.OwnedDymNames
+	var existingOwnedDymNames dymnstypes.ReverseLookupDymNames
 
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get(dymNamesOwnedByAccountKey)

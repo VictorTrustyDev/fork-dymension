@@ -77,14 +77,14 @@ func (m *DymNameConfig) Validate() error {
 	return nil
 }
 
-func (m *OwnedDymNames) Validate() error {
+func (m *ReverseLookupDymNames) Validate() error {
 	if m == nil {
-		return ErrValidationFailed.Wrap("owned dym name is nil")
+		return ErrValidationFailed.Wrap("reverse lookup record is nil")
 	}
 
 	for _, name := range m.DymNames {
 		if !dymnsutils.IsValidDymName(name) {
-			return ErrValidationFailed.Wrapf("owned dym name is not a valid dym name: %s", name)
+			return ErrValidationFailed.Wrapf("invalid dym name: %s", name)
 		}
 	}
 

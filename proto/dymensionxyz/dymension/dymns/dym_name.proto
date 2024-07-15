@@ -45,7 +45,7 @@ message DymNameConfig {
   string value = 4;
 }
 
-// OwnedDymNames contains a list of Dym-Names owned by an account.
-message OwnedDymNames {
+// ReverseLookupDymNames contains a list of Dym-Names for reverse lookup.
+message ReverseLookupDymNames {
   repeated string dym_names = 1;
 }
