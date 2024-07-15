@@ -35,7 +35,7 @@ func NewRegisterDymNameTxCmd() *cobra.Command {
 				return fmt.Errorf("input Dym-Name '%s' is not a valid Dym-Name", dymName)
 			}
 
-			years, _ := cmd.Flags().GetUint16(flagYears)
+			years, _ := cmd.Flags().GetInt64(flagYears)
 			if years < 1 {
 				return fmt.Errorf("years must be greater than 0, specify by flag --%s", flagYears)
 			}
@@ -49,7 +49,7 @@ func NewRegisterDymNameTxCmd() *cobra.Command {
 
 				resEst, err := queryClient.EstimateRegisterName(cmd.Context(), &dymnstypes.QueryEstimateRegisterNameRequest{
 					Name:     dymName,
-					Duration: int32(years),
+					Duration: years,
 					Owner:    buyer,
 				})
 				if err != nil {
@@ -89,7 +89,7 @@ func NewRegisterDymNameTxCmd() *cobra.Command {
 
 			return submitRegistration(clientCtx, &dymnstypes.MsgRegisterName{
 				Name:           dymName,
-				Duration:       int32(years),
+				Duration:       years,
 				Owner:          buyer,
 				ConfirmPayment: confirmPayment,
 			}, cmd)
@@ -98,7 +98,7 @@ func NewRegisterDymNameTxCmd() *cobra.Command {
 
 	flags.AddTxFlagsToCmd(cmd)
 
-	cmd.Flags().Uint16(flagYears, 0, "number of years to register the Dym-Name for")
+	cmd.Flags().Int64(flagYears, 0, "number of years to register the Dym-Name for")
 	cmd.Flags().String(flagConfirmPayment, "", "confirm payment for the Dym-Name registration, without this flag, the command will query the estimated payment amount")
 
 	return cmd

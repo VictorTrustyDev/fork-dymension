@@ -14,7 +14,7 @@ func TestMsgRegisterName_ValidateBasic(t *testing.T) {
 	tests := []struct {
 		name            string
 		dymName         string
-		duration        int32
+		duration        int64
 		owner           string
 		confirmPayment  sdk.Coin
 		wantErr         bool

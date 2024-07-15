@@ -891,7 +891,7 @@ func Test_queryServer_EstimateRegisterName(t *testing.T) {
 
 			resp, err := queryServer.EstimateRegisterName(sdk.WrapSDKContext(ctx), &dymnstypes.QueryEstimateRegisterNameRequest{
 				Name:     tt.dymName,
-				Duration: int32(tt.duration),
+				Duration: tt.duration,
 				Owner:    tt.newOwner,
 			})
 

@@ -164,7 +164,7 @@ func (q queryServer) EstimateRegisterName(goCtx context.Context, req *dymnstypes
 		req.Name,
 		existingDymNameRecord,
 		req.Owner,
-		int64(req.Duration),
+		req.Duration,
 	)
 	return &estimation, nil
 }

@@ -65,7 +65,7 @@ func Test_msgServer_RegisterName(t *testing.T) {
 		name                    string
 		buyer                   string
 		originalBalance         int64
-		duration                int32
+		duration                int64
 		confirmPayment          sdk.Coin
 		customDymName           string
 		existingDymName         *dymnstypes.DymName

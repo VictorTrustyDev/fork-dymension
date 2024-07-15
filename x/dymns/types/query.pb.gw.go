@@ -334,7 +334,7 @@ func request_Query_EstimateRegisterName_0(ctx context.Context, marshaler runtime
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "duration")
 	}
 
-	protoReq.Duration, err = runtime.Int32(val)
+	protoReq.Duration, err = runtime.Int64(val)
 
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "duration", err)
@@ -379,7 +379,7 @@ func local_request_Query_EstimateRegisterName_0(ctx context.Context, marshaler r
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "duration")
 	}
 
-	protoReq.Duration, err = runtime.Int32(val)
+	protoReq.Duration, err = runtime.Int64(val)
 
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "duration", err)

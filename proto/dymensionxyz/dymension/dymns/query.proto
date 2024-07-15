@@ -137,7 +137,7 @@ message QueryEstimateRegisterNameRequest {
   string name = 1;
 
   // duration is the number of years the Dym-Name will be registered for.
-  int32 duration = 2;
+  int64 duration = 2;
 
   // owner is the bech32-encoded address of the account which owns the order.
   string owner = 3;
