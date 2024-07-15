@@ -95,29 +95,29 @@ func (k Keeper) SetReverseMappingOwnerToOwnedDymName(ctx sdk.Context, owner, nam
 
 	dymNamesOwnedByAccountKey := dymnstypes.DymNamesOwnedByAccountRvlKey(bzAccAddr)
 
-	var existingOwnedDymNames dymnstypes.ReverseLookupDymNames
+	var ownedDymNames dymnstypes.ReverseLookupDymNames
 
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get(dymNamesOwnedByAccountKey)
 	if bz != nil {
-		k.cdc.MustUnmarshal(bz, &existingOwnedDymNames)
-		for _, owned := range existingOwnedDymNames.DymNames {
+		k.cdc.MustUnmarshal(bz, &ownedDymNames)
+		for _, owned := range ownedDymNames.DymNames {
 			if owned == name {
 				// reverse lookup already exists
 				return nil
 			}
 		}
 
-		existingOwnedDymNames.DymNames = append(existingOwnedDymNames.DymNames, name)
+		ownedDymNames.DymNames = append(ownedDymNames.DymNames, name)
 	} else {
-		existingOwnedDymNames = dymnstypes.ReverseLookupDymNames{
+		ownedDymNames = dymnstypes.ReverseLookupDymNames{
 			DymNames: []string{
 				name,
 			},
 		}
 	}
 
-	bz = k.cdc.MustMarshal(&existingOwnedDymNames)
+	bz = k.cdc.MustMarshal(&ownedDymNames)
 	store.Set(dymNamesOwnedByAccountKey, bz)
 
 	return nil

@@ -117,3 +117,45 @@ func (m DymNameConfig) GetIdentity() string {
 func (m DymNameConfig) IsDelete() bool {
 	return m.Value == ""
 }
+
+func (m ReverseLookupDymNames) Distinct() ReverseLookupDymNames {
+	var uniqueDymNames = make(map[string]bool)
+	for _, name := range m.DymNames {
+		uniqueDymNames[name] = true
+	}
+	distinctDymNames := make([]string, 0, len(uniqueDymNames))
+	for name := range uniqueDymNames {
+		distinctDymNames = append(distinctDymNames, name)
+	}
+	return ReverseLookupDymNames{
+		DymNames: distinctDymNames,
+	}
+}
+
+func (m ReverseLookupDymNames) Combine(other ReverseLookupDymNames) ReverseLookupDymNames {
+	return ReverseLookupDymNames{
+		DymNames: append(m.DymNames, other.DymNames...),
+	}.Distinct()
+}
+
+func (m ReverseLookupDymNames) Exclude(toBeExcluded ReverseLookupDymNames) ReverseLookupDymNames {
+	if len(toBeExcluded.DymNames) == 0 {
+		return m
+	}
+
+	var excludedDymNames = make(map[string]bool)
+	for _, name := range toBeExcluded.DymNames {
+		excludedDymNames[name] = true
+	}
+
+	var filteredDymNames = make([]string, 0, len(m.DymNames))
+	for _, name := range m.DymNames {
+		if !excludedDymNames[name] {
+			filteredDymNames = append(filteredDymNames, name)
+		}
+	}
+
+	return ReverseLookupDymNames{
+		DymNames: filteredDymNames,
+	}.Distinct()
+}

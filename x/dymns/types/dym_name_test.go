@@ -2,6 +2,7 @@ package types
 
 import (
 	"github.com/stretchr/testify/require"
+	"sort"
 	"testing"
 	"time"
 )
@@ -579,4 +580,209 @@ func TestDymNameConfig_IsDelete(t *testing.T) {
 	require.False(t, DymNameConfig{
 		Value: "1",
 	}.IsDelete(), "if value is not empty then it's not delete")
+}
+
+func TestReverseLookupDymNames_Distinct(t *testing.T) {
+	tests := []struct {
+		name             string
+		providedDymNames []string
+		wantDistinct     []string
+	}{
+		{
+			name:             "distinct",
+			providedDymNames: []string{"a", "b", "b", "a", "c", "d"},
+			wantDistinct:     []string{"a", "b", "c", "d"},
+		},
+		{
+			name:             "distinct of single",
+			providedDymNames: []string{"a"},
+			wantDistinct:     []string{"a"},
+		},
+		{
+			name:             "empty",
+			providedDymNames: []string{},
+			wantDistinct:     []string{},
+		},
+		{
+			name:             "nil",
+			providedDymNames: nil,
+			wantDistinct:     []string{},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := ReverseLookupDymNames{
+				DymNames: tt.providedDymNames,
+			}
+			distinct := m.Distinct().DymNames
+			want := tt.wantDistinct
+
+			sort.Strings(distinct)
+			sort.Strings(want)
+
+			require.Equal(t, want, distinct)
+		})
+	}
+}
+
+func TestReverseLookupDymNames_Combine(t *testing.T) {
+	tests := []struct {
+		name             string
+		providedDymNames []string
+		otherDymNames    []string
+		wantCombined     []string
+	}{
+		{
+			name:             "combined",
+			providedDymNames: []string{"a", "b"},
+			otherDymNames:    []string{"c", "d"},
+			wantCombined:     []string{"a", "b", "c", "d"},
+		},
+		{
+			name:             "combined, distinct",
+			providedDymNames: []string{"a", "b"},
+			otherDymNames:    []string{"b", "c", "d"},
+			wantCombined:     []string{"a", "b", "c", "d"},
+		},
+		{
+			name:             "combined, distinct",
+			providedDymNames: []string{"a"},
+			otherDymNames:    []string{"a"},
+			wantCombined:     []string{"a"},
+		},
+		{
+			name:             "combine empty with other",
+			providedDymNames: nil,
+			otherDymNames:    []string{"a"},
+			wantCombined:     []string{"a"},
+		},
+		{
+			name:             "combine empty with other",
+			providedDymNames: []string{"a"},
+			otherDymNames:    nil,
+			wantCombined:     []string{"a"},
+		},
+		{
+			name:             "combine empty with other",
+			providedDymNames: nil,
+			otherDymNames:    []string{"a", "b"},
+			wantCombined:     []string{"a", "b"},
+		},
+		{
+			name:             "combine with other empty",
+			providedDymNames: []string{"a", "b"},
+			otherDymNames:    nil,
+			wantCombined:     []string{"a", "b"},
+		},
+		{
+			name:             "distinct source",
+			providedDymNames: []string{"a", "b", "a"},
+			otherDymNames:    []string{"c", "c", "d"},
+			wantCombined:     []string{"a", "b", "c", "d"},
+		},
+		{
+			name:             "both empty",
+			providedDymNames: []string{},
+			otherDymNames:    []string{},
+			wantCombined:     []string{},
+		},
+		{
+			name:             "both nil",
+			providedDymNames: nil,
+			otherDymNames:    nil,
+			wantCombined:     []string{},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := ReverseLookupDymNames{
+				DymNames: tt.providedDymNames,
+			}
+			other := ReverseLookupDymNames{
+				DymNames: tt.otherDymNames,
+			}
+			combined := m.Combine(other).DymNames
+			want := tt.wantCombined
+
+			sort.Strings(combined)
+			sort.Strings(want)
+
+			require.Equal(t, want, combined)
+		})
+	}
+}
+
+func TestReverseLookupDymNames_Exclude(t *testing.T) {
+	tests := []struct {
+		name                 string
+		providedDymNames     []string
+		toBeExcludedDymNames []string
+		want                 []string
+	}{
+		{
+			name:                 "exclude",
+			providedDymNames:     []string{"a", "b", "c", "d"},
+			toBeExcludedDymNames: []string{"b", "d"},
+			want:                 []string{"a", "c"},
+		},
+		{
+			name:                 "exclude all",
+			providedDymNames:     []string{"a", "b", "c", "d"},
+			toBeExcludedDymNames: []string{"d", "c", "b", "a"},
+			want:                 []string{},
+		},
+		{
+			name:                 "exclude none",
+			providedDymNames:     []string{"a", "b", "c", "d"},
+			toBeExcludedDymNames: []string{},
+			want:                 []string{"a", "b", "c", "d"},
+		},
+		{
+			name:                 "exclude nil",
+			providedDymNames:     []string{"a", "b", "c", "d"},
+			toBeExcludedDymNames: []string{},
+			want:                 []string{"a", "b", "c", "d"},
+		},
+		{
+			name:                 "none exclude",
+			providedDymNames:     []string{},
+			toBeExcludedDymNames: []string{"a", "b", "c", "d"},
+			want:                 []string{},
+		},
+		{
+			name:                 "nil exclude",
+			providedDymNames:     nil,
+			toBeExcludedDymNames: []string{"a", "b", "c", "d"},
+			want:                 []string{},
+		},
+		{
+			name:                 "distinct after exclude",
+			providedDymNames:     []string{"a", "a", "b"},
+			toBeExcludedDymNames: []string{"b", "d"},
+			want:                 []string{"a"},
+		},
+		{
+			name:                 "exclude partial",
+			providedDymNames:     []string{"a", "b", "c"},
+			toBeExcludedDymNames: []string{"b", "c", "d"},
+			want:                 []string{"a"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := ReverseLookupDymNames{
+				DymNames: tt.providedDymNames,
+			}
+			other := ReverseLookupDymNames{
+				DymNames: tt.toBeExcludedDymNames,
+			}
+			combined := m.Exclude(other).DymNames
+			want := tt.want
+
+			sort.Strings(combined)
+			sort.Strings(want)
+
+			require.Equal(t, want, combined)
+		})
+	}
 }
