@@ -14,6 +14,8 @@ import (
 
 //goland:noinspection SpellCheckingInspection
 func TestExportThenInitGenesis(t *testing.T) {
+	now := time.Now()
+
 	oldKeeper, _, _, oldCtx := testkeeper.DymNSKeeper(t)
 
 	// Setup genesis state
@@ -27,7 +29,7 @@ func TestExportThenInitGenesis(t *testing.T) {
 		Name:       "bonded-pool",
 		Owner:      owner1,
 		Controller: owner1,
-		ExpireAt:   time.Now().UTC().Add(time.Hour).Unix(),
+		ExpireAt:   now.Add(time.Hour).Unix(),
 	}
 	require.NoError(t, oldKeeper.SetDymName(oldCtx, dymName1))
 
@@ -35,7 +37,7 @@ func TestExportThenInitGenesis(t *testing.T) {
 		Name:       "not-bonded-pool",
 		Owner:      owner2,
 		Controller: owner2,
-		ExpireAt:   time.Now().UTC().Add(time.Hour).Unix(),
+		ExpireAt:   now.Add(time.Hour).Unix(),
 	}
 	require.NoError(t, oldKeeper.SetDymName(oldCtx, dymName2))
 
@@ -43,7 +45,7 @@ func TestExportThenInitGenesis(t *testing.T) {
 		Name:       "not-bonded-pool2",
 		Owner:      owner2,
 		Controller: owner2,
-		ExpireAt:   time.Now().UTC().Add(-time.Hour).Unix(),
+		ExpireAt:   now.Add(-time.Hour).Unix(),
 	}
 	require.NoError(t, oldKeeper.SetDymName(oldCtx, dymName3Expired))
 
@@ -116,10 +118,26 @@ func TestExportThenInitGenesis(t *testing.T) {
 	})
 
 	t.Run("dym-names should be imported correctly", func(t *testing.T) {
-		// Expired dym-name should not be imported
-		require.Len(t, newDymNsKeeper.GetAllNonExpiredDymNames(newCtx, time.Now().Unix()), 2)
+		require.Len(t,
+			newDymNsKeeper.GetAllNonExpiredDymNames(newCtx, now.Unix()),
+			2,
+			"expired dym-name should not be imported",
+		)
+
 		require.Equal(t, &dymName1, newDymNsKeeper.GetDymName(newCtx, dymName1.Name))
 		require.Equal(t, &dymName2, newDymNsKeeper.GetDymName(newCtx, dymName2.Name))
+		require.Nil(t,
+			newDymNsKeeper.GetDymName(newCtx, dymName3Expired.Name),
+			"expired dym-name should not be imported",
+		)
+
+		owned, err := newDymNsKeeper.GetDymNamesOwnedBy(newCtx, owner1, now.Unix())
+		require.NoError(t, err)
+		require.Len(t, owned, 1, "reverse lookup should be created correctly")
+
+		owned, err = newDymNsKeeper.GetDymNamesOwnedBy(newCtx, owner2, now.Unix())
+		require.NoError(t, err)
+		require.Len(t, owned, 1, "reverse lookup should be created correctly")
 	})
 
 	t.Run("sell orders's non-refunded bids should be refunded correctly", func(t *testing.T) {
