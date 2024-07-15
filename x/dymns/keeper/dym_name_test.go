@@ -167,12 +167,12 @@ func TestKeeper_GetAllNonExpiredDymNames(t *testing.T) {
 }
 
 //goland:noinspection SpellCheckingInspection
-func TestKeeper_GetSetReverseMappingOwnerToOwnedDymName(t *testing.T) {
+func TestKeeper_GetAddReverseMappingOwnerToOwnedDymName(t *testing.T) {
 	dk, _, _, ctx := testkeeper.DymNSKeeper(t)
 
 	require.Error(
 		t,
-		dk.SetReverseMappingOwnerToOwnedDymName(ctx, "0x", "a"),
+		dk.AddReverseMappingOwnerToOwnedDymName(ctx, "0x", "a"),
 		"should not allow invalid owner address",
 	)
 
@@ -212,13 +212,13 @@ func TestKeeper_GetSetReverseMappingOwnerToOwnedDymName(t *testing.T) {
 
 	require.NoError(
 		t,
-		dk.SetReverseMappingOwnerToOwnedDymName(ctx, owner2, "not-exists"),
+		dk.AddReverseMappingOwnerToOwnedDymName(ctx, owner2, "not-exists"),
 		"no check non-existing dym-name",
 	)
 
 	require.NoError(
 		t,
-		dk.SetReverseMappingOwnerToOwnedDymName(ctx, owner2, dymName2.Name),
+		dk.AddReverseMappingOwnerToOwnedDymName(ctx, owner2, dymName2.Name),
 		"no error if duplicated name",
 	)
 
@@ -237,7 +237,7 @@ func TestKeeper_GetSetReverseMappingOwnerToOwnedDymName(t *testing.T) {
 
 	require.NoError(
 		t,
-		dk.SetReverseMappingOwnerToOwnedDymName(ctx, owner2, dymName1.Name),
+		dk.AddReverseMappingOwnerToOwnedDymName(ctx, owner2, dymName1.Name),
 		"no error if dym-name owned by another owner",
 	)
 	ownedBy2, err2 = dk.GetDymNamesOwnedBy(ctx, owner2, 0)

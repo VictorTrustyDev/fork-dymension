@@ -24,7 +24,7 @@ func (k Keeper) SetDymName(ctx sdk.Context, dymName dymnstypes.DymName) error {
 	ctx.EventManager().EmitEvent(dymName.GetSdkEvent())
 
 	// finally persist reverse lookup by owner account address
-	return k.SetReverseMappingOwnerToOwnedDymName(ctx, dymName.Owner, dymName.Name)
+	return k.AddReverseMappingOwnerToOwnedDymName(ctx, dymName.Owner, dymName.Name)
 }
 
 // GetDymName returns a Dym-Name from the KVStore.
@@ -86,8 +86,8 @@ func (k Keeper) GetAllNonExpiredDymNames(ctx sdk.Context, nowEpoch int64) (list 
 	return list
 }
 
-// SetReverseMappingOwnerToOwnedDymName stores a reverse mapping from owner to owned Dym-Name into the KVStore.
-func (k Keeper) SetReverseMappingOwnerToOwnedDymName(ctx sdk.Context, owner, name string) error {
+// AddReverseMappingOwnerToOwnedDymName stores a reverse mapping from owner to owned Dym-Name into the KVStore.
+func (k Keeper) AddReverseMappingOwnerToOwnedDymName(ctx sdk.Context, owner, name string) error {
 	_, bzAccAddr, err := bech32.DecodeAndConvert(owner)
 	if err != nil {
 		return dymnstypes.ErrInvalidOwner.Wrap(owner)
@@ -95,30 +95,34 @@ func (k Keeper) SetReverseMappingOwnerToOwnedDymName(ctx sdk.Context, owner, nam
 
 	dymNamesOwnedByAccountKey := dymnstypes.DymNamesOwnedByAccountRvlKey(bzAccAddr)
 
-	var ownedDymNames dymnstypes.ReverseLookupDymNames
+	return k.genericAddReverseMappingRecord(ctx, dymNamesOwnedByAccountKey, name)
+}
+
+func (k Keeper) genericAddReverseMappingRecord(ctx sdk.Context, key []byte, name string) error {
+	var reverseMappingToDymNames dymnstypes.ReverseLookupDymNames
 
 	store := ctx.KVStore(k.storeKey)
-	bz := store.Get(dymNamesOwnedByAccountKey)
+	bz := store.Get(key)
 	if bz != nil {
-		k.cdc.MustUnmarshal(bz, &ownedDymNames)
-		for _, owned := range ownedDymNames.DymNames {
+		k.cdc.MustUnmarshal(bz, &reverseMappingToDymNames)
+		for _, owned := range reverseMappingToDymNames.DymNames {
 			if owned == name {
 				// reverse lookup already exists
 				return nil
 			}
 		}
 
-		ownedDymNames.DymNames = append(ownedDymNames.DymNames, name)
+		reverseMappingToDymNames.DymNames = append(reverseMappingToDymNames.DymNames, name)
 	} else {
-		ownedDymNames = dymnstypes.ReverseLookupDymNames{
+		reverseMappingToDymNames = dymnstypes.ReverseLookupDymNames{
 			DymNames: []string{
 				name,
 			},
 		}
 	}
 
-	bz = k.cdc.MustMarshal(&ownedDymNames)
-	store.Set(dymNamesOwnedByAccountKey, bz)
+	bz = k.cdc.MustMarshal(&reverseMappingToDymNames)
+	store.Set(key, bz)
 
 	return nil
 }
@@ -169,34 +173,38 @@ func (k Keeper) RemoveReverseMappingOwnerToOwnedDymName(ctx sdk.Context, owner, 
 
 	dymNamesOwnedByAccountKey := dymnstypes.DymNamesOwnedByAccountRvlKey(accAddr)
 
-	var ownedDymNames dymnstypes.ReverseLookupDymNames
+	return k.genericRemoveReverseMappingRecord(ctx, dymNamesOwnedByAccountKey, name)
+}
+
+func (k Keeper) genericRemoveReverseMappingRecord(ctx sdk.Context, key []byte, name string) error {
+	var reverseMappingToDymNames dymnstypes.ReverseLookupDymNames
 
 	store := ctx.KVStore(k.storeKey)
-	bz := store.Get(dymNamesOwnedByAccountKey)
+	bz := store.Get(key)
 	if bz == nil {
 		// no mapping to remove
 		return nil
 	}
 
-	k.cdc.MustUnmarshal(bz, &ownedDymNames)
+	k.cdc.MustUnmarshal(bz, &reverseMappingToDymNames)
 
-	newOwnedDymNames := ownedDymNames.Exclude(dymnstypes.ReverseLookupDymNames{
+	laterReverseMappingToDymNames := reverseMappingToDymNames.Exclude(dymnstypes.ReverseLookupDymNames{
 		DymNames: []string{name},
 	})
 
-	if len(newOwnedDymNames.DymNames) == len(ownedDymNames.DymNames) {
+	if len(laterReverseMappingToDymNames.DymNames) == len(reverseMappingToDymNames.DymNames) {
 		// no mapping to remove
 		return nil
 	}
 
-	if len(newOwnedDymNames.DymNames) == 0 {
-		// no more owned dym-names, remove the mapping
-		store.Delete(dymNamesOwnedByAccountKey)
+	if len(laterReverseMappingToDymNames.DymNames) == 0 {
+		// no more, remove record
+		store.Delete(key)
 		return nil
 	}
 
-	bz = k.cdc.MustMarshal(&newOwnedDymNames)
-	store.Set(dymNamesOwnedByAccountKey, bz)
+	bz = k.cdc.MustMarshal(&laterReverseMappingToDymNames)
+	store.Set(key, bz)
 
 	return nil
 }
