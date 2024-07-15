@@ -20,10 +20,10 @@ const (
 
 // prefix bytes for the DymNS persistent store
 const (
-	prefixDymName                                 = iota + 1
-	prefixRvlDymNameOwnedByAccount                // reverse lookup store
-	prefixRvlConfiguredAddressToDymNameInclude    // reverse lookup store
-	prefixRvlCoinType60HexAddressToDymNameInclude // reverse lookup store
+	prefixDymName                                  = iota + 1
+	prefixRvlDymNamesOwnedByAccount                // reverse lookup store
+	prefixRvlConfiguredAddressToDymNamesInclude    // reverse lookup store
+	prefixRvlCoinType60HexAddressToDymNamesInclude // reverse lookup store
 	prefixSellOrder
 	prefixActiveSellOrdersExpiration
 	prefixHistoricalSellOrders
@@ -34,12 +34,12 @@ var (
 	// KeyPrefixDymName is the key prefix for the Dym-Name records
 	KeyPrefixDymName = []byte{prefixDymName}
 
-	// KeyPrefixRvlDymNameOwnedByAccount is the key prefix for the reverse lookup for Dym-Names owned by an account
-	KeyPrefixRvlDymNameOwnedByAccount = []byte{prefixRvlDymNameOwnedByAccount}
+	// KeyPrefixRvlDymNamesOwnedByAccount is the key prefix for the reverse lookup for Dym-Names owned by an account
+	KeyPrefixRvlDymNamesOwnedByAccount = []byte{prefixRvlDymNamesOwnedByAccount}
 
-	KeyPrefixRvlConfiguredAddressToDymNameInclude = []byte{prefixRvlConfiguredAddressToDymNameInclude}
+	KeyPrefixRvlConfiguredAddressToDymNamesInclude = []byte{prefixRvlConfiguredAddressToDymNamesInclude}
 
-	KeyPrefixRvlCoinType60HexAddressToDymNameInclude = []byte{prefixRvlCoinType60HexAddressToDymNameInclude}
+	KeyPrefixRvlCoinType60HexAddressToDymNamesInclude = []byte{prefixRvlCoinType60HexAddressToDymNamesInclude}
 
 	// KeyPrefixSellOrder is the key prefix for the active Sell-Order records
 	KeyPrefixSellOrder = []byte{prefixSellOrder}
@@ -62,15 +62,15 @@ func DymNameKey(name string) []byte {
 
 // DymNamesOwnedByAccountRvlKey returns a key for reverse lookup for Dym-Names owned by an account
 func DymNamesOwnedByAccountRvlKey(owner sdk.AccAddress) []byte {
-	return append(KeyPrefixRvlDymNameOwnedByAccount, owner.Bytes()...)
+	return append(KeyPrefixRvlDymNamesOwnedByAccount, owner.Bytes()...)
 }
 
-func ConfiguredAddressToDymNameIncludeRvlKey(address string) []byte {
-	return append(KeyPrefixRvlConfiguredAddressToDymNameInclude, []byte(address)...)
+func ConfiguredAddressToDymNamesIncludeRvlKey(address string) []byte {
+	return append(KeyPrefixRvlConfiguredAddressToDymNamesInclude, []byte(address)...)
 }
 
-func CoinType60HexAddressToDymNameIncludeRvlKey(coinType60AccAddr sdk.AccAddress) []byte {
-	return append(KeyPrefixRvlCoinType60HexAddressToDymNameInclude, []byte(coinType60AccAddr)...)
+func CoinType60HexAddressToDymNamesIncludeRvlKey(coinType60AccAddr sdk.AccAddress) []byte {
+	return append(KeyPrefixRvlCoinType60HexAddressToDymNamesInclude, []byte(coinType60AccAddr)...)
 }
 
 // SellOrderKey returns a key for the active Sell-Order of the Dym-Name

@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-//goland:noinspection ALL
+//goland:noinspection SpellCheckingInspection
 func Test_msgServer_TransferOwnership(t *testing.T) {
 	now := time.Now().UTC()
 

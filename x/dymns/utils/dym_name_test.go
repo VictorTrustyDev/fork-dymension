@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-//goland:noinspection ALL
+//goland:noinspection SpellCheckingInspection
 func TestIsValidDymName(t *testing.T) {
 	t.Run("maximum accepted length is 20", func(t *testing.T) {
 		require.True(t, IsValidDymName("12345678901234567890"))
