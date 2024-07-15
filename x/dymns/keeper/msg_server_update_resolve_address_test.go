@@ -4,6 +4,7 @@ import (
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/dymensionxyz/dymension/v3/app/params"
 	testkeeper "github.com/dymensionxyz/dymension/v3/testutil/keeper"
 	dymnskeeper "github.com/dymensionxyz/dymension/v3/x/dymns/keeper"
 	dymnstypes "github.com/dymensionxyz/dymension/v3/x/dymns/types"
@@ -31,6 +32,8 @@ func Test_msgServer_UpdateResolveAddress(t *testing.T) {
 	const owner = "dym1fl48vsnmsdzcv85q5d2q4z5ajdha8yu38x9fue"
 	const controller = "dym1gtcunp63a3aqypr250csar4devn8fjpqulq8d4"
 	const recordName = "bonded-pool"
+
+	params.SetAddressPrefixes()
 
 	tests := []struct {
 		name                string
@@ -666,6 +669,72 @@ func Test_msgServer_UpdateResolveAddress(t *testing.T) {
 				},
 			},
 			wantMinGasConsummed: dymnstypes.OpGasConfig,
+		},
+		{
+			name: "fail - reject if address is not corresponding bech32 on host chain if target chain is host chain, case empty chain-id",
+			dymName: &dymnstypes.DymName{
+				Owner:      owner,
+				Controller: controller,
+				ExpireAt:   now.Unix() + 1,
+			},
+			msg: &dymnstypes.MsgUpdateResolveAddress{
+				ChainId:    "",
+				SubName:    "a",
+				ResolveTo:  "nim1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3pklgjx", // owner but with nim prefix
+				Controller: controller,
+			},
+			wantErr:         true,
+			wantErrContains: "resolve address must be a valid bech32 account address on host chain",
+			wantDymName: &dymnstypes.DymName{
+				Owner:      owner,
+				Controller: controller,
+				ExpireAt:   now.Unix() + 1,
+			},
+			wantMinGasConsummed: 1,
+		},
+		{
+			name: "fail - reject if address is not corresponding bech32 on host chain if target chain is host chain, case use chain-id in request",
+			dymName: &dymnstypes.DymName{
+				Owner:      owner,
+				Controller: controller,
+				ExpireAt:   now.Unix() + 1,
+			},
+			msg: &dymnstypes.MsgUpdateResolveAddress{
+				ChainId:    chainId,
+				SubName:    "a",
+				ResolveTo:  "nim1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3pklgjx", // owner but with nim prefix
+				Controller: controller,
+			},
+			wantErr:         true,
+			wantErrContains: "resolve address must be a valid bech32 account address on host chain",
+			wantDymName: &dymnstypes.DymName{
+				Owner:      owner,
+				Controller: controller,
+				ExpireAt:   now.Unix() + 1,
+			},
+			wantMinGasConsummed: 1,
+		},
+		{
+			name: "fail - reject if address is not corresponding bech32 on host chain if target chain is host chain, case dym prefix but valoper, not acc addr",
+			dymName: &dymnstypes.DymName{
+				Owner:      owner,
+				Controller: controller,
+				ExpireAt:   now.Unix() + 1,
+			},
+			msg: &dymnstypes.MsgUpdateResolveAddress{
+				ChainId:    "",
+				SubName:    "a",
+				ResolveTo:  "dymvaloper1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3ydetzr", // owner but with valoper prefix
+				Controller: controller,
+			},
+			wantErr:         true,
+			wantErrContains: "resolve address must be a valid bech32 account address on host chain",
+			wantDymName: &dymnstypes.DymName{
+				Owner:      owner,
+				Controller: controller,
+				ExpireAt:   now.Unix() + 1,
+			},
+			wantMinGasConsummed: 1,
 		},
 	}
 	for _, tt := range tests {

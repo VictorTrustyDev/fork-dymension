@@ -118,6 +118,54 @@ func (m DymNameConfig) IsDelete() bool {
 	return m.Value == ""
 }
 
+func (m *DymName) GetAddressReverseMappingRecords() (
+	configuredAddressToDymNames ReverseLookupDymNames,
+	coinType60HexAddressToDymNames ReverseLookupDymNames,
+) {
+	if err := m.Validate(); err != nil {
+		// should validate before calling this method
+		panic(err)
+	}
+
+	defer func() {
+		configuredAddressToDymNames = configuredAddressToDymNames.Distinct()
+		coinType60HexAddressToDymNames = coinType60HexAddressToDymNames.Distinct()
+	}()
+
+	var nameConfigs []DymNameConfig
+	for _, config := range m.Configs {
+		if config.Type == DymNameConfigType_NAME {
+			nameConfigs = append(nameConfigs, config)
+		}
+	}
+
+	var defaultConfig *DymNameConfig
+	for _, config := range nameConfigs {
+		if config.ChainId == "" && config.Path == "" {
+			defaultConfig = &config
+			break
+		}
+	}
+
+	if defaultConfig == nil {
+		defaultConfig = &DymNameConfig{
+			Type:    DymNameConfigType_NAME,
+			ChainId: "",
+			Path:    "",
+			Value:   m.Owner,
+		}
+	}
+
+	//defaultConfigAccAddr, err := sdk.AccAddressFromBech32(defaultConfig.Value)
+	//if err != nil {
+	//	// should not happen as configuration should be validated before calling this method
+	//	panic(err)
+	//}
+
+	// TODO DymNS: implement this
+	return
+}
+
 func (m ReverseLookupDymNames) Distinct() ReverseLookupDymNames {
 	var uniqueDymNames = make(map[string]bool)
 	for _, name := range m.DymNames {

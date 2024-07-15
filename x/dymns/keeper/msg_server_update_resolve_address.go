@@ -108,5 +108,13 @@ func (k msgServer) validateUpdateResolveAddress(ctx sdk.Context, msg *dymnstypes
 		return nil, sdkerrors.ErrUnauthorized
 	}
 
+	if msg.ResolveTo != "" && (msg.ChainId == "" || msg.ChainId == ctx.ChainID()) {
+		if _, err := sdk.AccAddressFromBech32(msg.ResolveTo); err != nil {
+			return nil, sdkerrors.ErrInvalidAddress.Wrap(
+				"resolve address must be a valid bech32 account address on host chain",
+			)
+		}
+	}
+
 	return dymName, nil
 }
