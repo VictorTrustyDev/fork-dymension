@@ -95,36 +95,7 @@ func (k Keeper) AddReverseMappingOwnerToOwnedDymName(ctx sdk.Context, owner, nam
 
 	dymNamesOwnedByAccountKey := dymnstypes.DymNamesOwnedByAccountRvlKey(bzAccAddr)
 
-	return k.genericAddReverseMappingRecord(ctx, dymNamesOwnedByAccountKey, name)
-}
-
-func (k Keeper) genericAddReverseMappingRecord(ctx sdk.Context, key []byte, name string) error {
-	var reverseMappingToDymNames dymnstypes.ReverseLookupDymNames
-
-	store := ctx.KVStore(k.storeKey)
-	bz := store.Get(key)
-	if bz != nil {
-		k.cdc.MustUnmarshal(bz, &reverseMappingToDymNames)
-		for _, owned := range reverseMappingToDymNames.DymNames {
-			if owned == name {
-				// reverse lookup already exists
-				return nil
-			}
-		}
-
-		reverseMappingToDymNames.DymNames = append(reverseMappingToDymNames.DymNames, name)
-	} else {
-		reverseMappingToDymNames = dymnstypes.ReverseLookupDymNames{
-			DymNames: []string{
-				name,
-			},
-		}
-	}
-
-	bz = k.cdc.MustMarshal(&reverseMappingToDymNames)
-	store.Set(key, bz)
-
-	return nil
+	return k.GenericAddReverseLookupDymNamesRecord(ctx, dymNamesOwnedByAccountKey, name)
 }
 
 // GetDymNamesOwnedBy returns all Dym-Names owned by the account address.
@@ -138,15 +109,7 @@ func (k Keeper) GetDymNamesOwnedBy(
 
 	dymNamesOwnedByAccountKey := dymnstypes.DymNamesOwnedByAccountRvlKey(bzAccAddr)
 
-	var existingOwnedDymNames dymnstypes.ReverseLookupDymNames
-
-	store := ctx.KVStore(k.storeKey)
-	bz := store.Get(dymNamesOwnedByAccountKey)
-	if bz == nil {
-		return nil, nil
-	}
-
-	k.cdc.MustUnmarshal(bz, &existingOwnedDymNames)
+	existingOwnedDymNames := k.GenericGetReverseLookupDymNamesRecord(ctx, dymNamesOwnedByAccountKey)
 
 	var dymNames []dymnstypes.DymName
 	for _, owned := range existingOwnedDymNames.DymNames {
@@ -173,40 +136,7 @@ func (k Keeper) RemoveReverseMappingOwnerToOwnedDymName(ctx sdk.Context, owner, 
 
 	dymNamesOwnedByAccountKey := dymnstypes.DymNamesOwnedByAccountRvlKey(accAddr)
 
-	return k.genericRemoveReverseMappingRecord(ctx, dymNamesOwnedByAccountKey, name)
-}
-
-func (k Keeper) genericRemoveReverseMappingRecord(ctx sdk.Context, key []byte, name string) error {
-	var reverseMappingToDymNames dymnstypes.ReverseLookupDymNames
-
-	store := ctx.KVStore(k.storeKey)
-	bz := store.Get(key)
-	if bz == nil {
-		// no mapping to remove
-		return nil
-	}
-
-	k.cdc.MustUnmarshal(bz, &reverseMappingToDymNames)
-
-	laterReverseMappingToDymNames := reverseMappingToDymNames.Exclude(dymnstypes.ReverseLookupDymNames{
-		DymNames: []string{name},
-	})
-
-	if len(laterReverseMappingToDymNames.DymNames) == len(reverseMappingToDymNames.DymNames) {
-		// no mapping to remove
-		return nil
-	}
-
-	if len(laterReverseMappingToDymNames.DymNames) == 0 {
-		// no more, remove record
-		store.Delete(key)
-		return nil
-	}
-
-	bz = k.cdc.MustMarshal(&laterReverseMappingToDymNames)
-	store.Set(key, bz)
-
-	return nil
+	return k.GenericRemoveReverseLookupDymNamesRecord(ctx, dymNamesOwnedByAccountKey, name)
 }
 
 // PruneDymName removes a Dym-Name from the KVStore, as well as all related records.
