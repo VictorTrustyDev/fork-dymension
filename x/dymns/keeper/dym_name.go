@@ -119,8 +119,6 @@ func (k Keeper) PruneDymName(ctx sdk.Context, name string) error {
 	return nil
 }
 
-// TODO DymNS: support resolve 0x1234...@nim to nim1xxxxx (bech32 of 0x1234... with nim acc addr prefix)
-
 func (k Keeper) ResolveByDymNameAddress(ctx sdk.Context, dymNameAddress string) (outputAddress string, err error) {
 	subName, name, chainIdOrAlias, parseErr := ParseDymNameAddress(dymNameAddress)
 	if parseErr != nil {
@@ -298,9 +296,9 @@ func (k Keeper) tryResolveChainIdOrAliasToChainId(ctx sdk.Context, chainIdOrAlia
 		return chainIdOrAlias, true
 	}
 
-	aliasParams := k.AliasParams(ctx)
-	if len(aliasParams.ByChainId) > 0 {
-		for chainId, aliases := range aliasParams.ByChainId {
+	chainsParams := k.ChainsParams(ctx)
+	if len(chainsParams.AliasesByChainId) > 0 {
+		for chainId, aliases := range chainsParams.AliasesByChainId {
 			if chainIdOrAlias == chainId {
 				return chainId, true
 			}

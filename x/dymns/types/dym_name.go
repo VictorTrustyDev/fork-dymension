@@ -125,7 +125,7 @@ func (m DymNameConfig) IsDelete() bool {
 }
 
 func (m *DymName) GetAddressReverseMappingRecords(
-	fCheckChainIdIsCoinType60 func(string) bool,
+	fAddCoinType60HexAddrForChainId func(string) bool,
 ) (
 	configuredAddressesToDymNames map[string]ReverseLookupDymNames,
 	coinType60HexAddressesToDymNames map[string]ReverseLookupDymNames,
@@ -137,8 +137,8 @@ func (m *DymName) GetAddressReverseMappingRecords(
 		panic(err)
 	}
 
-	if fCheckChainIdIsCoinType60 == nil {
-		panic("function to check if chain-id is coin-type 60 is required")
+	if fAddCoinType60HexAddrForChainId == nil {
+		panic("fAddCoinType60HexAddrForChainId is required")
 	}
 
 	configuredAddressesToDymNames = make(map[string]ReverseLookupDymNames)
@@ -228,7 +228,7 @@ func (m *DymName) GetAddressReverseMappingRecords(
 		}
 
 		addConfiguredAddressToDymNames(config.Value, m.Name)
-		if config.ChainId == "" || fCheckChainIdIsCoinType60(config.ChainId) {
+		if config.ChainId == "" || fAddCoinType60HexAddrForChainId(config.ChainId) {
 			// add coin-type 60 hex address for only host chain records or coin-type-60 chain records
 			addCoinType60HexAddressToDymNames(bz, m.Name)
 		}

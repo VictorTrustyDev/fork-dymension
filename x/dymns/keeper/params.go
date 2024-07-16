@@ -9,7 +9,7 @@ import (
 func (k Keeper) GetParams(ctx sdk.Context) dymnstypes.Params {
 	return dymnstypes.NewParams(
 		k.PriceParams(ctx),
-		k.AliasParams(ctx),
+		k.ChainsParams(ctx),
 		k.MiscParams(ctx),
 	)
 }
@@ -28,12 +28,27 @@ func (k Keeper) PriceParams(ctx sdk.Context) (res dymnstypes.PriceParams) {
 	return
 }
 
-func (k Keeper) AliasParams(ctx sdk.Context) (res dymnstypes.AliasParams) {
-	k.paramstore.Get(ctx, dymnstypes.KeyAliasParams, &res)
+func (k Keeper) ChainsParams(ctx sdk.Context) (res dymnstypes.ChainsParams) {
+	k.paramstore.Get(ctx, dymnstypes.KeyChainsParams, &res)
 	return
 }
 
 func (k Keeper) MiscParams(ctx sdk.Context) (res dymnstypes.MiscParams) {
 	k.paramstore.Get(ctx, dymnstypes.KeyMiscParams, &res)
 	return
+}
+
+func (k Keeper) CheckChainIsCoinType60ByChainId(ctx sdk.Context, chainId string) bool {
+	if k.IsRollAppId(ctx, chainId) {
+		// all RollApps on Dymension use secp256k1
+		return true
+	}
+
+	for _, coinType60ChainIds := range k.ChainsParams(ctx).CoinType60ChainIds {
+		if coinType60ChainIds == chainId {
+			return true
+		}
+	}
+
+	return false
 }

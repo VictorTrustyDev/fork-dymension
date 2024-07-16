@@ -13,8 +13,8 @@ message Params {
     (gogoproto.nullable) = false
   ];
 
-  AliasParams alias = 2 [
-    (gogoproto.moretags) = "yaml:\"alias\"",
+  ChainsParams chains = 2 [
+    (gogoproto.moretags) = "yaml:\"chains\"",
     (gogoproto.nullable) = false
   ];
 
@@ -73,10 +73,15 @@ message PriceParams {
   ];
 }
 
-message AliasParams {
-  map<string, AliasesOfChainId> by_chain_id = 1 [
-    (gogoproto.moretags) = "yaml:\"by_chain_id\"",
+message ChainsParams {
+  map<string, AliasesOfChainId> aliases_by_chain_id = 1 [
+    (gogoproto.moretags) = "yaml:\"aliases_by_chain_id\"",
     (gogoproto.nullable) = false
+  ];
+
+  repeated string coin_type_60_chain_ids = 2 [
+    (gogoproto.customname) = "CoinType60ChainIds",
+    (gogoproto.moretags) = "yaml:\"coin_type_60_chain_ids\""
   ];
 }
 

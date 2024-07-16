@@ -15,8 +15,8 @@ var (
 	// KeyPriceParams is the key for the price params
 	KeyPriceParams = []byte("PriceParams")
 
-	// KeyAliasParams is the key for the alias params
-	KeyAliasParams = []byte("AliasParams")
+	// KeyChainsParams is the key for the chains params
+	KeyChainsParams = []byte("ChainsParams")
 
 	// KeyMiscParams is the key for the misc params
 	KeyMiscParams = []byte("MiscParams")
@@ -38,7 +38,7 @@ func ParamKeyTable() paramtypes.KeyTable {
 func DefaultParams() Params {
 	return NewParams(
 		DefaultPriceParams(),
-		DefaultAliasParams(),
+		DefaultChainsParams(),
 		DefaultMiscParams(),
 	)
 }
@@ -56,10 +56,17 @@ func DefaultPriceParams() PriceParams {
 	}
 }
 
-// DefaultAliasParams returns a default set of alias configuration
-func DefaultAliasParams() AliasParams {
-	return AliasParams{
-		ByChainId: make(map[string]AliasesOfChainId),
+// DefaultChainsParams returns a default set of chains configuration
+func DefaultChainsParams() ChainsParams {
+	//goland:noinspection SpellCheckingInspection
+	return ChainsParams{
+		AliasesByChainId: make(map[string]AliasesOfChainId),
+		CoinType60ChainIds: []string{
+			"evmos_9001-2",       // Evmos Mainnet
+			"evmos_9001-3",       // Evmos Mainnet Re-Genesis
+			"injective-1",        // Injective Mainnet
+			"cronosmainnet_25-1", // Cronos Mainnet
+		},
 	}
 }
 
@@ -75,11 +82,11 @@ func DefaultMiscParams() MiscParams {
 	}
 }
 
-func NewParams(price PriceParams, alias AliasParams, misc MiscParams) Params {
+func NewParams(price PriceParams, chains ChainsParams, misc MiscParams) Params {
 	return Params{
-		Price: price,
-		Alias: alias,
-		Misc:  misc,
+		Price:  price,
+		Chains: chains,
+		Misc:   misc,
 	}
 }
 
@@ -87,7 +94,7 @@ func NewParams(price PriceParams, alias AliasParams, misc MiscParams) Params {
 func (m *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 	return paramtypes.ParamSetPairs{
 		paramtypes.NewParamSetPair(KeyPriceParams, &m.Price, validatePriceParams),
-		paramtypes.NewParamSetPair(KeyAliasParams, &m.Alias, validateAliasParams),
+		paramtypes.NewParamSetPair(KeyChainsParams, &m.Chains, validateChainsParams),
 		paramtypes.NewParamSetPair(KeyMiscParams, &m.Misc, validateMiscParams),
 	}
 }
@@ -96,8 +103,8 @@ func (m *Params) Validate() error {
 	if err := m.Price.Validate(); err != nil {
 		return ErrValidationFailed.Wrapf("price params: %v", err)
 	}
-	if err := m.Alias.Validate(); err != nil {
-		return ErrValidationFailed.Wrapf("alias params: %v", err)
+	if err := m.Chains.Validate(); err != nil {
+		return ErrValidationFailed.Wrapf("chains params: %v", err)
 	}
 	if err := m.Misc.Validate(); err != nil {
 		return ErrValidationFailed.Wrapf("misc params: %v", err)
@@ -109,8 +116,8 @@ func (m PriceParams) Validate() error {
 	return validatePriceParams(m)
 }
 
-func (m AliasParams) Validate() error {
-	return validateAliasParams(m)
+func (m ChainsParams) Validate() error {
+	return validateChainsParams(m)
 }
 
 func (m MiscParams) Validate() error {
@@ -206,37 +213,53 @@ func validatePriceParams(i interface{}) error {
 	return nil
 }
 
-func validateAliasParams(i interface{}) error {
-	m, ok := i.(AliasParams)
+func validateChainsParams(i interface{}) error {
+	m, ok := i.(ChainsParams)
 	if !ok {
 		return fmt.Errorf("invalid parameter type: %T", i)
 	}
 
-	uniqueAmongAll := make(map[string]bool)
-	for chainID, aliases := range m.ByChainId {
+	uniqueChainIdAliasAmongAliasConfig := make(map[string]bool)
+	for chainID, aliases := range m.AliasesByChainId {
 		if len(chainID) < 3 {
-			return ErrValidationFailed.Wrapf("chain ID `%s` must be at least 3 characters", chainID)
+			return ErrValidationFailed.Wrapf("alias: chain ID `%s` must be at least 3 characters", chainID)
 		}
 
 		if !dymnsutils.IsValidChainIdFormat(chainID) {
-			return ErrValidationFailed.Wrapf("chain ID `%s` is not well-formed", chainID)
+			return ErrValidationFailed.Wrapf("alias: chain ID `%s` is not well-formed", chainID)
 		}
 
-		if _, ok := uniqueAmongAll[chainID]; ok {
-			return ErrValidationFailed.Wrapf("chain ID and alias must unique among all, found duplicated '%s'", chainID)
+		if _, ok := uniqueChainIdAliasAmongAliasConfig[chainID]; ok {
+			return ErrValidationFailed.Wrapf("alias: chain ID and alias must unique among all, found duplicated '%s'", chainID)
 		}
-		uniqueAmongAll[chainID] = true
+		uniqueChainIdAliasAmongAliasConfig[chainID] = true
 
 		for _, alias := range aliases.Aliases {
 			if !dymnsutils.IsValidAlias(alias) {
 				return ErrValidationFailed.Wrapf("alias `%s` is not well-formed", alias)
 			}
 
-			if _, ok := uniqueAmongAll[alias]; ok {
-				return ErrValidationFailed.Wrapf("chain ID and alias must unique among all, found duplicated '%s'", alias)
+			if _, ok := uniqueChainIdAliasAmongAliasConfig[alias]; ok {
+				return ErrValidationFailed.Wrapf("alias: chain ID and alias must unique among all, found duplicated '%s'", alias)
 			}
-			uniqueAmongAll[alias] = true
+			uniqueChainIdAliasAmongAliasConfig[alias] = true
 		}
+	}
+
+	uniqueChainIdAmongCoinType60ChainsConfig := make(map[string]bool)
+	for _, chainID := range m.CoinType60ChainIds {
+		if len(chainID) < 3 {
+			return ErrValidationFailed.Wrapf("coin-type-60 chains: chain ID `%s` must be at least 3 characters", chainID)
+		}
+
+		if !dymnsutils.IsValidChainIdFormat(chainID) {
+			return ErrValidationFailed.Wrapf("coin-type-60 chains: chain ID `%s` is not well-formed", chainID)
+		}
+
+		if _, ok := uniqueChainIdAmongCoinType60ChainsConfig[chainID]; ok {
+			return ErrValidationFailed.Wrapf("coin-type-60 chains: chain ID is not unique '%s'", chainID)
+		}
+		uniqueChainIdAmongCoinType60ChainsConfig[chainID] = true
 	}
 
 	return nil

@@ -47,7 +47,7 @@ func NewUpdateResolveDymNameAddressTxCmd() *cobra.Command {
 
 			chainId := func(chainIdOrAlias string) string {
 				// translate to chain-id of is an alias
-				for chainId, aliasesOfChainId := range moduleParams.Alias.ByChainId {
+				for chainId, aliasesOfChainId := range moduleParams.Chains.AliasesByChainId {
 					if chainId == chainIdOrAlias {
 						return chainId
 					}

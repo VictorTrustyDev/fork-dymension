@@ -48,6 +48,7 @@ func (k Keeper) GetDymNamesOwnedBy(
 	return dymNames, nil
 }
 
+// RemoveReverseMappingOwnerToOwnedDymName removes a reverse mapping from owner to owned Dym-Name from the KVStore.
 func (k Keeper) RemoveReverseMappingOwnerToOwnedDymName(ctx sdk.Context, owner, name string) error {
 	accAddr, err := sdk.AccAddressFromBech32(owner)
 	if err != nil {
@@ -59,6 +60,7 @@ func (k Keeper) RemoveReverseMappingOwnerToOwnedDymName(ctx sdk.Context, owner, 
 	return k.GenericRemoveReverseLookupDymNamesRecord(ctx, dymNamesOwnedByAccountKey, name)
 }
 
+// GenericAddReverseLookupDymNamesRecord is a utility method that help to add a reverse lookup record for Dym-Names.
 func (k Keeper) GenericAddReverseLookupDymNamesRecord(ctx sdk.Context, key []byte, name string) error {
 	var modifiedRecord dymnstypes.ReverseLookupDymNames
 
@@ -90,6 +92,7 @@ func (k Keeper) GenericAddReverseLookupDymNamesRecord(ctx sdk.Context, key []byt
 	return nil
 }
 
+// GenericGetReverseLookupDymNamesRecord is a utility method that help to get a reverse lookup record for Dym-Names.
 func (k Keeper) GenericGetReverseLookupDymNamesRecord(
 	ctx sdk.Context, key []byte,
 ) dymnstypes.ReverseLookupDymNames {
@@ -104,6 +107,7 @@ func (k Keeper) GenericGetReverseLookupDymNamesRecord(
 	return existingRecord
 }
 
+// GenericRemoveReverseLookupDymNamesRecord is a utility method that help to remove a reverse lookup record for Dym-Names.
 func (k Keeper) GenericRemoveReverseLookupDymNamesRecord(ctx sdk.Context, key []byte, name string) error {
 	var existingRecord dymnstypes.ReverseLookupDymNames
 

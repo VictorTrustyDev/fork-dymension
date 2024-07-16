@@ -316,7 +316,7 @@ func TestKeeper_ResolveByDymNameAddress(t *testing.T) {
 
 	generalSetupAlias := func(ctx sdk.Context, dk dymnskeeper.Keeper) {
 		params := dk.GetParams(ctx)
-		params.Alias.ByChainId = map[string]dymnstypes.AliasesOfChainId{
+		params.Chains.AliasesByChainId = map[string]dymnstypes.AliasesOfChainId{
 			chainId: {
 				Aliases: []string{"dym", "dymension"},
 			},
@@ -1008,7 +1008,7 @@ func TestKeeper_ResolveByDymNameAddress(t *testing.T) {
 			},
 			preSetup: func(ctx sdk.Context, dk dymnskeeper.Keeper) {
 				params := dk.GetParams(ctx)
-				params.Alias.ByChainId = map[string]dymnstypes.AliasesOfChainId{
+				params.Chains.AliasesByChainId = map[string]dymnstypes.AliasesOfChainId{
 					"blumbus_111-1": {
 						Aliases: []string{"blumbus"},
 					},
@@ -1145,7 +1145,7 @@ func TestKeeper_ResolveByDymNameAddress(t *testing.T) {
 
 		// setup alias
 		moduleParams := dk.GetParams(ctx)
-		moduleParams.Alias.ByChainId = map[string]dymnstypes.AliasesOfChainId{
+		moduleParams.Chains.AliasesByChainId = map[string]dymnstypes.AliasesOfChainId{
 			chainId: {
 				Aliases: []string{"dym"},
 			},

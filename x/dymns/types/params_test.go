@@ -22,12 +22,13 @@ func TestNewParams(t *testing.T) {
 		PriceParams{
 			PriceDenom: "a",
 		},
-		AliasParams{
-			ByChainId: map[string]AliasesOfChainId{
+		ChainsParams{
+			AliasesByChainId: map[string]AliasesOfChainId{
 				"dymension_1100-1": {
 					Aliases: []string{"dym", "dymension"},
 				},
 			},
+			CoinType60ChainIds: []string{"injective-1"},
 		},
 		MiscParams{
 			BeginEpochHookIdentifier:     "b",
@@ -39,9 +40,11 @@ func TestNewParams(t *testing.T) {
 		},
 	)
 	require.Equal(t, "a", params.Price.PriceDenom)
-	require.Len(t, params.Alias.ByChainId, 1)
-	require.Len(t, params.Alias.ByChainId["dymension_1100-1"].Aliases, 2)
-	require.Equal(t, AliasesOfChainId{Aliases: []string{"dym", "dymension"}}, params.Alias.ByChainId["dymension_1100-1"])
+	require.Len(t, params.Chains.AliasesByChainId, 1)
+	require.Len(t, params.Chains.AliasesByChainId["dymension_1100-1"].Aliases, 2)
+	require.Equal(t, AliasesOfChainId{Aliases: []string{"dym", "dymension"}}, params.Chains.AliasesByChainId["dymension_1100-1"])
+	require.Len(t, params.Chains.CoinType60ChainIds, 1)
+	require.Equal(t, params.Chains.CoinType60ChainIds[0], "injective-1")
 	require.Equal(t, "b", params.Misc.BeginEpochHookIdentifier)
 	require.Equal(t, "c", params.Misc.EndEpochHookIdentifier)
 	require.Equal(t, int32(30), params.Misc.DaysGracePeriod)
@@ -72,8 +75,8 @@ func TestDefaultPriceParams(t *testing.T) {
 	})
 }
 
-func TestDefaultAliasParams(t *testing.T) {
-	require.NoError(t, DefaultAliasParams().Validate())
+func TestDefaultChainsParams(t *testing.T) {
+	require.NoError(t, DefaultChainsParams().Validate())
 }
 
 func TestDefaultMiscParams(t *testing.T) {
@@ -92,6 +95,10 @@ func TestParams_Validate(t *testing.T) {
 
 	params = DefaultParams()
 	params.Price.Price_1Letter = sdk.ZeroInt()
+	require.Error(t, (&params).Validate())
+
+	params = DefaultParams()
+	params.Chains.CoinType60ChainIds = []string{"invalid@"}
 	require.Error(t, (&params).Validate())
 
 	params = DefaultParams()
@@ -205,46 +212,45 @@ func TestPriceParams_Validate(t *testing.T) {
 	})
 }
 
-func TestAliasParams_Validate(t *testing.T) {
+//goland:noinspection SpellCheckingInspection
+func TestChainsParams_Validate(t *testing.T) {
 	var tests = []struct {
 		name            string
-		modifier        func(AliasParams) AliasParams
+		modifier        func(params ChainsParams) ChainsParams
 		wantErr         bool
 		wantErrContains string
 	}{
 		{
 			name:     "default is valid",
-			modifier: func(p AliasParams) AliasParams { return p },
+			modifier: func(p ChainsParams) ChainsParams { return p },
 		},
 		{
-			name: "empty is valid",
-			modifier: func(p AliasParams) AliasParams {
-				p.ByChainId = nil
+			name: "alias: empty is valid",
+			modifier: func(p ChainsParams) ChainsParams {
+				p.AliasesByChainId = nil
 				return p
 			},
 		},
 		{
-			name: "empty alias of chain is valid",
-			modifier: func(p AliasParams) AliasParams {
-				p.ByChainId = map[string]AliasesOfChainId{
+			name: "coin-type-60-chains: empty is valid",
+			modifier: func(p ChainsParams) ChainsParams {
+				p.CoinType60ChainIds = nil
+				return p
+			},
+		},
+		{
+			name: "alias: empty alias of chain is valid",
+			modifier: func(p ChainsParams) ChainsParams {
+				p.AliasesByChainId = map[string]AliasesOfChainId{
 					"dymension_1100-1": {Aliases: nil},
 				}
 				return p
 			},
 		},
 		{
-			name: "empty alias of chain is valid",
-			modifier: func(p AliasParams) AliasParams {
-				p.ByChainId = map[string]AliasesOfChainId{
-					"dymension_1100-1": {Aliases: nil},
-				}
-				return p
-			},
-		},
-		{
-			name: "valid and correct alias",
-			modifier: func(p AliasParams) AliasParams {
-				p.ByChainId = map[string]AliasesOfChainId{
+			name: "alias: valid and correct alias",
+			modifier: func(p ChainsParams) ChainsParams {
+				p.AliasesByChainId = map[string]AliasesOfChainId{
 					"dymension_1100-1": {Aliases: []string{"dym"}},
 					"blumbus_100-1":    {Aliases: []string{"bb", "blumbus"}},
 				}
@@ -252,9 +258,16 @@ func TestAliasParams_Validate(t *testing.T) {
 			},
 		},
 		{
-			name: "chain_id and alias must be unique among all, case alias & alias",
-			modifier: func(p AliasParams) AliasParams {
-				p.ByChainId = map[string]AliasesOfChainId{
+			name: "coin-type-60-chains: valid and correct alias",
+			modifier: func(p ChainsParams) ChainsParams {
+				p.CoinType60ChainIds = []string{"injective-1", "cronosmainnet_25-1"}
+				return p
+			},
+		},
+		{
+			name: "alias: chain_id and alias must be unique among all, case alias & alias",
+			modifier: func(p ChainsParams) ChainsParams {
+				p.AliasesByChainId = map[string]AliasesOfChainId{
 					"dymension_1100-1": {Aliases: []string{"dym"}},
 					"blumbus_100-1":    {Aliases: []string{"dym", "blumbus"}},
 				}
@@ -264,9 +277,18 @@ func TestAliasParams_Validate(t *testing.T) {
 			wantErrContains: "chain ID and alias must unique among all",
 		},
 		{
-			name: "chain_id and alias must be unique among all, case chain-id & alias",
-			modifier: func(p AliasParams) AliasParams {
-				p.ByChainId = map[string]AliasesOfChainId{
+			name: "coin-type-60-chains: chain_id must be unique among all",
+			modifier: func(p ChainsParams) ChainsParams {
+				p.CoinType60ChainIds = []string{"injective-1", "cronosmainnet_25-1", "injective-1"}
+				return p
+			},
+			wantErr:         true,
+			wantErrContains: "chain ID is not unique",
+		},
+		{
+			name: "alias: chain_id and alias must be unique among all, case chain-id & alias",
+			modifier: func(p ChainsParams) ChainsParams {
+				p.AliasesByChainId = map[string]AliasesOfChainId{
 					"dymension_1100-1": {Aliases: []string{"dym", "dymension"}},
 					"blumbus_100-1":    {Aliases: []string{"blumbus", "cosmoshub"}},
 					"cosmoshub":        {Aliases: []string{"cosmos"}},
@@ -277,9 +299,9 @@ func TestAliasParams_Validate(t *testing.T) {
 			wantErrContains: "chain ID and alias must unique among all",
 		},
 		{
-			name: "reject if chain-id format is bad",
-			modifier: func(p AliasParams) AliasParams {
-				p.ByChainId = map[string]AliasesOfChainId{
+			name: "alias: reject if chain-id format is bad",
+			modifier: func(p ChainsParams) ChainsParams {
+				p.AliasesByChainId = map[string]AliasesOfChainId{
 					"dymension@":    {Aliases: []string{"dym"}},
 					"blumbus_100-1": {Aliases: []string{"blumbus"}},
 				}
@@ -289,9 +311,27 @@ func TestAliasParams_Validate(t *testing.T) {
 			wantErrContains: "is not well-formed",
 		},
 		{
-			name: "reject if chain-id format is bad",
-			modifier: func(p AliasParams) AliasParams {
-				p.ByChainId = map[string]AliasesOfChainId{
+			name: "coin-type-60-chains: reject if chain-id format is bad",
+			modifier: func(p ChainsParams) ChainsParams {
+				p.CoinType60ChainIds = []string{"injective@"}
+				return p
+			},
+			wantErr:         true,
+			wantErrContains: "is not well-formed",
+		},
+		{
+			name: "coin-type-60-chains: reject if chain-id format is bad",
+			modifier: func(p ChainsParams) ChainsParams {
+				p.CoinType60ChainIds = []string{"in"}
+				return p
+			},
+			wantErr:         true,
+			wantErrContains: "must be at least 3 characters",
+		},
+		{
+			name: "alias: reject if chain-id format is bad",
+			modifier: func(p ChainsParams) ChainsParams {
+				p.AliasesByChainId = map[string]AliasesOfChainId{
 					"d": {Aliases: []string{"dym"}},
 				}
 				return p
@@ -300,9 +340,9 @@ func TestAliasParams_Validate(t *testing.T) {
 			wantErrContains: "must be at least 3 characters",
 		},
 		{
-			name: "reject if alias format is bad",
-			modifier: func(p AliasParams) AliasParams {
-				p.ByChainId = map[string]AliasesOfChainId{
+			name: "alias: reject if alias format is bad",
+			modifier: func(p ChainsParams) ChainsParams {
+				p.AliasesByChainId = map[string]AliasesOfChainId{
 					"dymension_1100-1": {Aliases: []string{"dym-dym"}},
 					"blumbus_100-1":    {Aliases: []string{"blumbus"}},
 				}
@@ -314,7 +354,7 @@ func TestAliasParams_Validate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := tt.modifier(DefaultAliasParams()).Validate()
+			err := tt.modifier(DefaultChainsParams()).Validate()
 			if tt.wantErr {
 				require.NotEmpty(t, tt.wantErrContains, "mis-configured test case")
 				require.Error(t, err)
@@ -326,8 +366,8 @@ func TestAliasParams_Validate(t *testing.T) {
 	}
 
 	t.Run("invalid type", func(t *testing.T) {
-		require.Error(t, validateAliasParams("hello world"))
-		require.Error(t, validateAliasParams(&AliasParams{}), "not accept pointer")
+		require.Error(t, validateChainsParams("hello world"))
+		require.Error(t, validateChainsParams(&ChainsParams{}), "not accept pointer")
 	})
 }
 
