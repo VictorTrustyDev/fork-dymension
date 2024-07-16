@@ -617,6 +617,7 @@ func TestDymName_GetAddressReverseMappingRecords(t *testing.T) {
 	tests := []struct {
 		name                                 string
 		configs                              []DymNameConfig
+		customFuncCheckChainIdIsCoinType60   func(string) bool
 		wantPanic                            bool
 		wantConfiguredAddressesToDymNames    map[string]ReverseLookupDymNames
 		wantCoinType60HexAddressesToDymNames map[string]ReverseLookupDymNames
@@ -866,6 +867,141 @@ func TestDymName_GetAddressReverseMappingRecords(t *testing.T) {
 			},
 		},
 		{
+			name: "pass - chains not coin-type-60 will not have hex records",
+			configs: []DymNameConfig{
+				{
+					Type:    DymNameConfigType_NAME,
+					ChainId: "",
+					Path:    "",
+					Value:   ownerBech32,
+				},
+				{
+					Type:    DymNameConfigType_NAME,
+					ChainId: "cosmoshub-4",
+					Path:    "",
+					Value:   "cosmos1tygms3xhhs3yv487phx3dw4a95jn7t7lpm470r",
+				},
+				{
+					Type:    DymNameConfigType_NAME,
+					ChainId: "",
+					Path:    "bonded-pool",
+					Value:   bondedPoolBech32,
+				},
+			},
+			customFuncCheckChainIdIsCoinType60: func(_ string) bool {
+				return false // no chain is coin-type-60
+			},
+			wantConfiguredAddressesToDymNames: map[string]ReverseLookupDymNames{
+				ownerBech32: {
+					DymNames: []string{dymName},
+				},
+				"cosmos1tygms3xhhs3yv487phx3dw4a95jn7t7lpm470r": {
+					DymNames: []string{dymName},
+				},
+				bondedPoolBech32: {
+					DymNames: []string{dymName},
+				},
+			},
+			wantCoinType60HexAddressesToDymNames: map[string]ReverseLookupDymNames{
+				ownerHex: {
+					DymNames: []string{dymName},
+				},
+				bondedPoolHex: {
+					DymNames: []string{dymName},
+				},
+			},
+		},
+		{
+			name: "pass - chains not coin-type-60 will not have hex records, mixed with chain that is coin-type-60",
+			configs: []DymNameConfig{
+				{
+					Type:    DymNameConfigType_NAME,
+					ChainId: "",
+					Path:    "",
+					Value:   ownerBech32,
+				},
+				{
+					Type:    DymNameConfigType_NAME,
+					ChainId: "cosmoshub-4",
+					Path:    "",
+					Value:   "cosmos1tygms3xhhs3yv487phx3dw4a95jn7t7lpm470r",
+				},
+				{
+					Type:    DymNameConfigType_NAME,
+					ChainId: "nim_1122-1",
+					Path:    "",
+					Value:   "dym1gtcunp63a3aqypr250csar4devn8fjpqulq8d4",
+				},
+				{
+					Type:    DymNameConfigType_NAME,
+					ChainId: "",
+					Path:    "bonded-pool",
+					Value:   bondedPoolBech32,
+				},
+			},
+			customFuncCheckChainIdIsCoinType60: func(chaiId string) bool {
+				return chaiId == "nim_1122-1" // only NIM is coin-type-60
+			},
+			wantConfiguredAddressesToDymNames: map[string]ReverseLookupDymNames{
+				ownerBech32: {
+					DymNames: []string{dymName},
+				},
+				"cosmos1tygms3xhhs3yv487phx3dw4a95jn7t7lpm470r": {
+					DymNames: []string{dymName},
+				},
+				"dym1gtcunp63a3aqypr250csar4devn8fjpqulq8d4": {
+					DymNames: []string{dymName},
+				},
+				bondedPoolBech32: {
+					DymNames: []string{dymName},
+				},
+			},
+			wantCoinType60HexAddressesToDymNames: map[string]ReverseLookupDymNames{
+				ownerHex: {
+					DymNames: []string{dymName},
+				},
+				bondedPoolHex: {
+					DymNames: []string{dymName},
+				},
+				"0x42f1c98751ec7a02046aa3f10e8eadcb2674c820": {
+					DymNames: []string{dymName},
+				},
+			},
+		},
+		{
+			name: "pass - host chain is coin-type-60, regardless of func check chain id is coin-type-60 or not",
+			configs: []DymNameConfig{
+				{
+					Type:    DymNameConfigType_NAME,
+					ChainId: "",
+					Path:    "",
+					Value:   ownerBech32,
+				},
+				{
+					Type:    DymNameConfigType_NAME,
+					ChainId: "cosmoshub-4",
+					Path:    "",
+					Value:   "cosmos1tygms3xhhs3yv487phx3dw4a95jn7t7lpm470r",
+				},
+			},
+			customFuncCheckChainIdIsCoinType60: func(_ string) bool {
+				return false // no chain is coin-type-60
+			},
+			wantConfiguredAddressesToDymNames: map[string]ReverseLookupDymNames{
+				ownerBech32: {
+					DymNames: []string{dymName},
+				},
+				"cosmos1tygms3xhhs3yv487phx3dw4a95jn7t7lpm470r": {
+					DymNames: []string{dymName},
+				},
+			},
+			wantCoinType60HexAddressesToDymNames: map[string]ReverseLookupDymNames{
+				ownerHex: {
+					DymNames: []string{dymName},
+				},
+			},
+		},
+		{
 			name:      "fail - not accept malformed config",
 			configs:   []DymNameConfig{{}},
 			wantPanic: true,
@@ -1013,13 +1149,22 @@ func TestDymName_GetAddressReverseMappingRecords(t *testing.T) {
 
 			if tt.wantPanic {
 				require.Panics(t, func() {
-					_, _ = m.GetAddressReverseMappingRecords()
+					_, _ = m.GetAddressReverseMappingRecords(func(_ string) bool {
+						return true
+					})
 				})
 
 				return
 			}
 
-			gotConfiguredAddressesToDymNames, gotCoinType60HexAddressesToDymNames := m.GetAddressReverseMappingRecords()
+			useFuncCheckChainIdIsCoinType60 := func(_ string) bool {
+				return true
+			}
+			if tt.customFuncCheckChainIdIsCoinType60 != nil {
+				useFuncCheckChainIdIsCoinType60 = tt.customFuncCheckChainIdIsCoinType60
+			}
+
+			gotConfiguredAddressesToDymNames, gotCoinType60HexAddressesToDymNames := m.GetAddressReverseMappingRecords(useFuncCheckChainIdIsCoinType60)
 			if !reflect.DeepEqual(gotConfiguredAddressesToDymNames, tt.wantConfiguredAddressesToDymNames) {
 				t.Errorf("gotConfiguredAddressesToDymNames = %v, want %v", gotConfiguredAddressesToDymNames, tt.wantConfiguredAddressesToDymNames)
 			}
@@ -1028,6 +1173,21 @@ func TestDymName_GetAddressReverseMappingRecords(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("func check chain-id is coin-type 60 chain is required", func(t *testing.T) {
+		dymName := &DymName{
+			Name:       "a",
+			Owner:      ownerBech32,
+			Controller: ownerBech32,
+			ExpireAt:   1,
+		}
+
+		require.NoError(t, dymName.Validate())
+
+		require.Panics(t, func() {
+			_, _ = dymName.GetAddressReverseMappingRecords(nil)
+		})
+	})
 }
 
 func TestReverseLookupDymNames_Distinct(t *testing.T) {
