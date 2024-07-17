@@ -3,7 +3,9 @@ package keeper
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/bech32"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	dymnstypes "github.com/dymensionxyz/dymension/v3/x/dymns/types"
+	"strings"
 )
 
 // AddReverseMappingOwnerToOwnedDymName stores a reverse mapping from owner to owned Dym-Name into the KVStore.
@@ -58,6 +60,71 @@ func (k Keeper) RemoveReverseMappingOwnerToOwnedDymName(ctx sdk.Context, owner, 
 	dymNamesOwnedByAccountKey := dymnstypes.DymNamesOwnedByAccountRvlKey(accAddr)
 
 	return k.GenericRemoveReverseLookupDymNamesRecord(ctx, dymNamesOwnedByAccountKey, name)
+}
+
+// AddReverseMappingConfiguredAddressToDymName stores a reverse mapping from configured address to Dym-Name which contains the configuration, into the KVStore.
+func (k Keeper) AddReverseMappingConfiguredAddressToDymName(ctx sdk.Context, configuredAddress, name string) error {
+	configuredAddress = normalizeConfiguredAddressForReverseMapping(configuredAddress)
+	if err := validateConfiguredAddressForReverseMapping(configuredAddress); err != nil {
+		return err
+	}
+
+	return k.GenericAddReverseLookupDymNamesRecord(
+		ctx,
+		dymnstypes.ConfiguredAddressToDymNamesIncludeRvlKey(configuredAddress),
+		name,
+	)
+}
+
+// GetDymNamesContainsConfiguredAddress returns all Dym-Names that contains the configured address.
+func (k Keeper) GetDymNamesContainsConfiguredAddress(
+	ctx sdk.Context, configuredAddress string, nowEpoch int64,
+) ([]dymnstypes.DymName, error) {
+	configuredAddress = normalizeConfiguredAddressForReverseMapping(configuredAddress)
+	if err := validateConfiguredAddressForReverseMapping(configuredAddress); err != nil {
+		return nil, err
+	}
+
+	key := dymnstypes.ConfiguredAddressToDymNamesIncludeRvlKey(configuredAddress)
+
+	currentDymNamesContainsConfiguredAddress := k.GenericGetReverseLookupDymNamesRecord(ctx, key)
+
+	var dymNames []dymnstypes.DymName
+	for _, name := range currentDymNamesContainsConfiguredAddress.DymNames {
+		dymName := k.GetDymNameWithExpirationCheck(ctx, name, nowEpoch)
+		if dymName == nil {
+			// dym-name not found, skip
+			continue
+		}
+		dymNames = append(dymNames, *dymName)
+	}
+
+	return dymNames, nil
+}
+
+// RemoveReverseMappingConfiguredAddressToDymName removes reverse mapping from configured address to Dym-Names which contains it from the KVStore.
+func (k Keeper) RemoveReverseMappingConfiguredAddressToDymName(ctx sdk.Context, configuredAddress, name string) error {
+	configuredAddress = normalizeConfiguredAddressForReverseMapping(configuredAddress)
+	if err := validateConfiguredAddressForReverseMapping(configuredAddress); err != nil {
+		return err
+	}
+
+	return k.GenericRemoveReverseLookupDymNamesRecord(
+		ctx,
+		dymnstypes.ConfiguredAddressToDymNamesIncludeRvlKey(configuredAddress),
+		name,
+	)
+}
+
+func validateConfiguredAddressForReverseMapping(configuredAddress string) error {
+	if configuredAddress == "" {
+		return sdkerrors.ErrInvalidRequest.Wrap("configured address cannot be blank")
+	}
+	return nil
+}
+
+func normalizeConfiguredAddressForReverseMapping(configuredAddress string) string {
+	return strings.ToLower(strings.TrimSpace(configuredAddress))
 }
 
 // GenericAddReverseLookupDymNamesRecord is a utility method that help to add a reverse lookup record for Dym-Names.

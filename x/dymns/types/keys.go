@@ -69,8 +69,8 @@ func ConfiguredAddressToDymNamesIncludeRvlKey(address string) []byte {
 	return append(KeyPrefixRvlConfiguredAddressToDymNamesInclude, []byte(address)...)
 }
 
-func CoinType60HexAddressToDymNamesIncludeRvlKey(coinType60AccAddr sdk.AccAddress) []byte {
-	return append(KeyPrefixRvlCoinType60HexAddressToDymNamesInclude, []byte(coinType60AccAddr)...)
+func CoinType60HexAddressToDymNamesIncludeRvlKey(coinType60AccAddr []byte) []byte {
+	return append(KeyPrefixRvlCoinType60HexAddressToDymNamesInclude, coinType60AccAddr...)
 }
 
 // SellOrderKey returns a key for the active Sell-Order of the Dym-Name
