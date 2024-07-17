@@ -65,10 +65,12 @@ func DymNamesOwnedByAccountRvlKey(owner sdk.AccAddress) []byte {
 	return append(KeyPrefixRvlDymNamesOwnedByAccount, owner.Bytes()...)
 }
 
+// ConfiguredAddressToDymNamesIncludeRvlKey returns a key for reverse lookup for Dym-Names that contain the configured address
 func ConfiguredAddressToDymNamesIncludeRvlKey(address string) []byte {
 	return append(KeyPrefixRvlConfiguredAddressToDymNamesInclude, []byte(address)...)
 }
 
+// CoinType60HexAddressToDymNamesIncludeRvlKey returns a key for reverse lookup for Dym-Names that contain the 0x address (coin-type 60, secp256k1, ethereum address)
 func CoinType60HexAddressToDymNamesIncludeRvlKey(coinType60AccAddr []byte) []byte {
 	return append(KeyPrefixRvlCoinType60HexAddressToDymNamesInclude, coinType60AccAddr...)
 }

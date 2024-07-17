@@ -127,6 +127,69 @@ func normalizeConfiguredAddressForReverseMapping(configuredAddress string) strin
 	return strings.ToLower(strings.TrimSpace(configuredAddress))
 }
 
+// AddReverseMapping0xAddressToDymName stores a reverse mapping
+// from 0x address (coin-type 60, secp256k1, ethereum address)
+// to Dym-Name which contains the 0x address, into the KVStore.
+func (k Keeper) AddReverseMapping0xAddressToDymName(ctx sdk.Context, _0xAddress []byte, name string) error {
+	if err := validate0xAddressForReverseMapping(_0xAddress); err != nil {
+		return err
+	}
+
+	return k.GenericAddReverseLookupDymNamesRecord(
+		ctx,
+		dymnstypes.CoinType60HexAddressToDymNamesIncludeRvlKey(_0xAddress),
+		name,
+	)
+}
+
+// GetDymNamesContains0xAddress returns all Dym-Names
+// that contains the 0x address (coin-type 60, secp256k1, ethereum address).
+func (k Keeper) GetDymNamesContains0xAddress(
+	ctx sdk.Context, _0xAddress []byte, nowEpoch int64,
+) ([]dymnstypes.DymName, error) {
+	if err := validate0xAddressForReverseMapping(_0xAddress); err != nil {
+		return nil, err
+	}
+
+	key := dymnstypes.CoinType60HexAddressToDymNamesIncludeRvlKey(_0xAddress)
+
+	currentDymNamesContains0xAddress := k.GenericGetReverseLookupDymNamesRecord(ctx, key)
+
+	var dymNames []dymnstypes.DymName
+	for _, name := range currentDymNamesContains0xAddress.DymNames {
+		dymName := k.GetDymNameWithExpirationCheck(ctx, name, nowEpoch)
+		if dymName == nil {
+			// dym-name not found, skip
+			continue
+		}
+		dymNames = append(dymNames, *dymName)
+	}
+
+	return dymNames, nil
+}
+
+// RemoveReverseMapping0xAddressToDymName removes reverse mapping
+// from 0x address (coin-type 60, secp256k1, ethereum address)
+// to Dym-Names which contains it from the KVStore.
+func (k Keeper) RemoveReverseMapping0xAddressToDymName(ctx sdk.Context, _0xAddress []byte, name string) error {
+	if err := validate0xAddressForReverseMapping(_0xAddress); err != nil {
+		return err
+	}
+
+	return k.GenericRemoveReverseLookupDymNamesRecord(
+		ctx,
+		dymnstypes.CoinType60HexAddressToDymNamesIncludeRvlKey(_0xAddress),
+		name,
+	)
+}
+
+func validate0xAddressForReverseMapping(_0xAddress []byte) error {
+	if length := len(_0xAddress); length != 20 && length != 32 {
+		return sdkerrors.ErrInvalidRequest.Wrapf("0x address must be 20 or 32 bytes, got %d", length)
+	}
+	return nil
+}
+
 // GenericAddReverseLookupDymNamesRecord is a utility method that help to add a reverse lookup record for Dym-Names.
 func (k Keeper) GenericAddReverseLookupDymNamesRecord(ctx sdk.Context, key []byte, name string) error {
 	var modifiedRecord dymnstypes.ReverseLookupDymNames
