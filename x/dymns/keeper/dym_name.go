@@ -59,10 +59,22 @@ func (k Keeper) GetDymNameWithExpirationCheck(ctx sdk.Context, name string, nowE
 	return dymName
 }
 
-func (k Keeper) DeleteDymName(ctx sdk.Context, name string) {
+func (k Keeper) DeleteDymName(ctx sdk.Context, name string) error {
+	previousRecord := k.GetDymName(ctx, name)
+	if previousRecord == nil {
+		return nil
+	}
+
 	store := ctx.KVStore(k.storeKey)
 	dymNameKey := dymnstypes.DymNameKey(name)
 	store.Delete(dymNameKey)
+
+	if err := k.RemoveReverseMappingOwnerToOwnedDymName(ctx, previousRecord.Owner, name); err != nil {
+		return err
+	}
+	// TODO DymNS: call GetAddressReverseMappingRecords and remove the reverse mapping
+
+	return nil
 }
 
 func (k Keeper) GetAllNonExpiredDymNames(ctx sdk.Context, nowEpoch int64) (list []dymnstypes.DymName) {
@@ -100,12 +112,6 @@ func (k Keeper) PruneDymName(ctx sdk.Context, name string) error {
 		return nil
 	}
 
-	// remove reverse mapping
-	if err := k.RemoveReverseMappingOwnerToOwnedDymName(ctx, dymName.Owner, dymName.Name); err != nil {
-		return err
-	}
-	// TODO DymNS: call GetAddressReverseMappingRecords and remove the reverse mapping
-
 	// remove config
 	// This seems not necessary because we are going to remove the record anyway,
 	// but just let it here to clear the business logic
@@ -113,10 +119,7 @@ func (k Keeper) PruneDymName(ctx sdk.Context, name string) error {
 	dymName.Owner = ""      // no one owns it anyone
 	dymName.Controller = "" // no one controls it anyone
 
-	// remove record
-	k.DeleteDymName(ctx, name)
-
-	return nil
+	return k.DeleteDymName(ctx, name)
 }
 
 func (k Keeper) ResolveByDymNameAddress(ctx sdk.Context, dymNameAddress string) (outputAddress string, err error) {

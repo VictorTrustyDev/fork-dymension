@@ -61,16 +61,36 @@ func TestKeeper_GetSetDeleteDymName(t *testing.T) {
 	})
 
 	t.Run("delete", func(t *testing.T) {
-		dk.DeleteDymName(ctx, dymName.Name)
+		err := dk.DeleteDymName(ctx, dymName.Name)
+		require.NoError(t, err)
 		require.Nil(t, dk.GetDymName(ctx, dymName.Name))
+
+		t.Run("reverse mapping should be deleted, check by key", func(t *testing.T) {
+			ownedBy := dk.GenericGetReverseLookupDymNamesRecord(ctx,
+				dymnstypes.DymNamesOwnedByAccountRvlKey(sdk.MustAccAddressFromBech32(owner)),
+			)
+			require.NoError(t, err)
+			require.Empty(t, ownedBy, "reverse mapping should be removed")
+		})
+
+		t.Run("reverse mapping should be deleted, check by get", func(t *testing.T) {
+			ownedBy, err := dk.GetDymNamesOwnedBy(ctx, owner, 0)
+			require.NoError(t, err)
+			require.Empty(t, ownedBy, "reverse mapping should be removed")
+		})
 	})
 
 	t.Run("can not set invalid Dym-Name", func(t *testing.T) {
 		require.Error(t, dk.SetDymName(ctx, dymnstypes.DymName{}))
 	})
 
-	t.Run("returns nil if non-exists", func(t *testing.T) {
+	t.Run("get returns nil if non-exists", func(t *testing.T) {
 		require.Nil(t, dk.GetDymName(ctx, "non-exists"))
+	})
+
+	t.Run("delete a non-exists Dym-Name should be ok", func(t *testing.T) {
+		err := dk.DeleteDymName(ctx, "non-exists")
+		require.NoError(t, err)
 	})
 }
 
