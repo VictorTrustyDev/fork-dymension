@@ -107,7 +107,7 @@ func TestKeeper_RemoveReverseMappingOwnerToOwnedDymName(t *testing.T) {
 		"should not allow invalid owner address",
 	)
 
-	owner := "dym1fl48vsnmsdzcv85q5d2q4z5ajdha8yu38x9fue"
+	const owner = "dym1fl48vsnmsdzcv85q5d2q4z5ajdha8yu38x9fue"
 
 	dymName1 := dymnstypes.DymName{
 		Name:       "bonded-pool",
@@ -286,9 +286,9 @@ func TestKeeper_RemoveReverseMappingConfiguredAddressToDymName(t *testing.T) {
 		"should not allow blank address",
 	)
 
-	owner := "dym1fl48vsnmsdzcv85q5d2q4z5ajdha8yu38x9fue"
-	anotherAccount := "dym1gtcunp63a3aqypr250csar4devn8fjpqulq8d4"
-	interchainAccount := "dym1zg69v7yszg69v7yszg69v7yszg69v7yszg69v7yszg69v7yszg6qrz80ul"
+	const owner = "dym1fl48vsnmsdzcv85q5d2q4z5ajdha8yu38x9fue"
+	const anotherAccount = "dym1gtcunp63a3aqypr250csar4devn8fjpqulq8d4"
+	const interchainAccount = "dym1zg69v7yszg69v7yszg69v7yszg69v7yszg69v7yszg69v7yszg6qrz80ul"
 
 	dymName1 := dymnstypes.DymName{
 		Name:       "bonded-pool",
@@ -532,8 +532,8 @@ func TestKeeper_RemoveReverseMapping0xAddressToDymName(t *testing.T) {
 		)
 	}
 
-	owner := "dym1fl48vsnmsdzcv85q5d2q4z5ajdha8yu38x9fue"
-	anotherAccount := "dym1zg69v7yszg69v7yszg69v7yszg69v7ys8xdv96"
+	const owner = "dym1fl48vsnmsdzcv85q5d2q4z5ajdha8yu38x9fue"
+	const anotherAccount = "dym1zg69v7yszg69v7yszg69v7yszg69v7ys8xdv96"
 	anotherAcc0xAddr := sdk.MustAccAddressFromBech32(anotherAccount)
 
 	interchainAccountBech32Addr := "dym1zg69v7yszg69v7yszg69v7yszg69v7yszg69v7yszg69v7yszg6qrz80ul"

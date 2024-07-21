@@ -51,7 +51,7 @@ func Test_epochHooks_BeforeEpochStart(t *testing.T) {
 		require.Less(t, originalGas, ctx.GasMeter().GasConsumed(), "should do something")
 	})
 
-	owner := "dym1fl48vsnmsdzcv85q5d2q4z5ajdha8yu38x9fue"
+	const owner = "dym1fl48vsnmsdzcv85q5d2q4z5ajdha8yu38x9fue"
 
 	dymNameA := dymnstypes.DymName{
 		Name:       "a",
@@ -651,8 +651,8 @@ func Test_epochHooks_AfterEpochEnd(t *testing.T) {
 		require.Less(t, originalGas, ctx.GasMeter().GasConsumed(), "should do something")
 	})
 
-	owner := "dym1fl48vsnmsdzcv85q5d2q4z5ajdha8yu38x9fue"
-	bidder := "dym1ysjlrjcankjpmpxxzk27mvzhv25e266r80p5pv"
+	const owner = "dym1fl48vsnmsdzcv85q5d2q4z5ajdha8yu38x9fue"
+	const bidder = "dym1ysjlrjcankjpmpxxzk27mvzhv25e266r80p5pv"
 	dymNsModuleAccAddr := authtypes.NewModuleAddress(dymnstypes.ModuleName)
 
 	dymNameA := dymnstypes.DymName{

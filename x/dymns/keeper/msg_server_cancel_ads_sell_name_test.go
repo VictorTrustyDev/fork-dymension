@@ -24,8 +24,8 @@ func Test_msgServer_CancelAdsSellName(t *testing.T) {
 
 	futureEpoch := ctx.BlockTime().Add(time.Hour).Unix()
 
-	owner := "dym1fl48vsnmsdzcv85q5d2q4z5ajdha8yu38x9fue"
-	bidder := "dym1tygms3xhhs3yv487phx3dw4a95jn7t7lnxec2d"
+	const owner = "dym1fl48vsnmsdzcv85q5d2q4z5ajdha8yu38x9fue"
+	const bidder = "dym1tygms3xhhs3yv487phx3dw4a95jn7t7lnxec2d"
 
 	dymName1 := dymnstypes.DymName{
 		Name:       "bonded-pool",

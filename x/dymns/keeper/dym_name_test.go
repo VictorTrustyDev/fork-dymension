@@ -21,7 +21,7 @@ import (
 func TestKeeper_GetSetDeleteDymName(t *testing.T) {
 	dk, _, _, ctx := testkeeper.DymNSKeeper(t)
 
-	owner := "dym1fl48vsnmsdzcv85q5d2q4z5ajdha8yu38x9fue"
+	const owner = "dym1fl48vsnmsdzcv85q5d2q4z5ajdha8yu38x9fue"
 
 	dymName := dymnstypes.DymName{
 		Name:       "bonded-pool",
@@ -122,7 +122,7 @@ func TestKeeper_BeforeAfterDymNameOwnerChanged(t *testing.T) {
 		require.Contains(t, err.Error(), dymnstypes.ErrDymNameNotFound.Error())
 	})
 
-	owner := "dym1fl48vsnmsdzcv85q5d2q4z5ajdha8yu38x9fue"
+	const owner = "dym1fl48vsnmsdzcv85q5d2q4z5ajdha8yu38x9fue"
 
 	dymName := dymnstypes.DymName{
 		Name:       "bonded-pool",
@@ -203,11 +203,11 @@ func TestKeeper_BeforeAfterDymNameConfigChanged(t *testing.T) {
 		require.Contains(t, err.Error(), dymnstypes.ErrDymNameNotFound.Error())
 	})
 
-	owner := "dym1fl48vsnmsdzcv85q5d2q4z5ajdha8yu38x9fue"
+	const owner = "dym1fl48vsnmsdzcv85q5d2q4z5ajdha8yu38x9fue"
 	ownerHex := sdk.MustAccAddressFromBech32(owner).Bytes()
-	controller := "dym1ysjlrjcankjpmpxxzk27mvzhv25e266r80p5pv"
+	const controller = "dym1ysjlrjcankjpmpxxzk27mvzhv25e266r80p5pv"
 	controllerHex := sdk.MustAccAddressFromBech32(controller).Bytes()
-	ica := "dym1zg69v7yszg69v7yszg69v7yszg69v7yszg69v7yszg69v7yszg6qrz80ul"
+	const ica = "dym1zg69v7yszg69v7yszg69v7yszg69v7yszg69v7yszg69v7yszg6qrz80ul"
 	icaHex := sdk.MustAccAddressFromBech32(ica).Bytes()
 
 	dymName := dymnstypes.DymName{
@@ -337,7 +337,7 @@ func TestKeeper_GetDymNameWithExpirationCheck(t *testing.T) {
 	})
 
 	//goland:noinspection SpellCheckingInspection
-	owner := "dym1fl48vsnmsdzcv85q5d2q4z5ajdha8yu38x9fue"
+	const owner = "dym1fl48vsnmsdzcv85q5d2q4z5ajdha8yu38x9fue"
 
 	dymName := dymnstypes.DymName{
 		Name:       "bonded-pool",
@@ -421,7 +421,7 @@ func TestKeeper_GetAllNonExpiredDymNames(t *testing.T) {
 func TestKeeper_GetDymNamesOwnedBy(t *testing.T) {
 	dk, _, _, ctx := testkeeper.DymNSKeeper(t)
 
-	owner := "dym1fl48vsnmsdzcv85q5d2q4z5ajdha8yu38x9fue"
+	const owner = "dym1fl48vsnmsdzcv85q5d2q4z5ajdha8yu38x9fue"
 
 	anchorEpoch := time.Now().UTC()
 
@@ -477,7 +477,7 @@ func TestKeeper_PruneDymName(t *testing.T) {
 	require.NoError(t, dk.PruneDymName(ctx, "non-exists"))
 
 	//goland:noinspection SpellCheckingInspection
-	owner := "dym1fl48vsnmsdzcv85q5d2q4z5ajdha8yu38x9fue"
+	const owner = "dym1fl48vsnmsdzcv85q5d2q4z5ajdha8yu38x9fue"
 
 	dymName1 := dymnstypes.DymName{
 		Name:       "bonded-pool",

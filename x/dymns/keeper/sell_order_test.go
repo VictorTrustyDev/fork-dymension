@@ -17,7 +17,7 @@ import (
 func TestKeeper_GetSetDeleteSellOrder(t *testing.T) {
 	dk, _, _, ctx := testkeeper.DymNSKeeper(t)
 
-	owner := "dym1fl48vsnmsdzcv85q5d2q4z5ajdha8yu38x9fue"
+	const owner = "dym1fl48vsnmsdzcv85q5d2q4z5ajdha8yu38x9fue"
 
 	t.Run("reject invalid SO", func(t *testing.T) {
 		err := dk.SetSellOrder(ctx, dymnstypes.SellOrder{})
@@ -165,7 +165,7 @@ func TestKeeper_MoveSellOrderToHistorical(t *testing.T) {
 
 	futureEpoch := ctx.BlockTime().Add(time.Hour).Unix()
 
-	owner := "dym1fl48vsnmsdzcv85q5d2q4z5ajdha8yu38x9fue"
+	const owner = "dym1fl48vsnmsdzcv85q5d2q4z5ajdha8yu38x9fue"
 
 	dymName1 := dymnstypes.DymName{
 		Name:       "bonded-pool",
@@ -306,7 +306,7 @@ func TestKeeper_GetAndDeleteHistoricalSellOrders(t *testing.T) {
 	})
 
 	//goland:noinspection SpellCheckingInspection
-	owner := "dym1fl48vsnmsdzcv85q5d2q4z5ajdha8yu38x9fue"
+	const owner = "dym1fl48vsnmsdzcv85q5d2q4z5ajdha8yu38x9fue"
 
 	dymName1 := dymnstypes.DymName{
 		Name:       "bonded-pool",
@@ -395,8 +395,8 @@ func TestKeeper_CompleteSellOrder(t *testing.T) {
 		return dk, bk, ctx
 	}
 
-	owner := "dym1fl48vsnmsdzcv85q5d2q4z5ajdha8yu38x9fue"
-	buyer := "dym1gtcunp63a3aqypr250csar4devn8fjpqulq8d4"
+	const owner = "dym1fl48vsnmsdzcv85q5d2q4z5ajdha8yu38x9fue"
+	const buyer = "dym1gtcunp63a3aqypr250csar4devn8fjpqulq8d4"
 
 	originalDymNameExpiry := futureEpoch
 	dymName := dymnstypes.DymName{

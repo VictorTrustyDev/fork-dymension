@@ -45,7 +45,7 @@ func Test_msgServer_PutAdsSellName(t *testing.T) {
 		}, dymnstypes.ErrValidationFailed.Error())
 	})
 
-	owner := "dym1fl48vsnmsdzcv85q5d2q4z5ajdha8yu38x9fue"
+	const owner = "dym1fl48vsnmsdzcv85q5d2q4z5ajdha8yu38x9fue"
 	coin100 := dymnsutils.TestCoin(100)
 	coin200 := dymnsutils.TestCoin(200)
 	coin300 := dymnsutils.TestCoin(300)

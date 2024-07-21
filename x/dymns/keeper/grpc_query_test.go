@@ -574,8 +574,8 @@ func Test_queryServer_EstimateRegisterName(t *testing.T) {
 		return dk, ctx
 	}
 
-	buyer := "dym1fl48vsnmsdzcv85q5d2q4z5ajdha8yu38x9fue"
-	previousOwner := "dym1gtcunp63a3aqypr250csar4devn8fjpqulq8d4"
+	const buyer = "dym1fl48vsnmsdzcv85q5d2q4z5ajdha8yu38x9fue"
+	const previousOwner = "dym1gtcunp63a3aqypr250csar4devn8fjpqulq8d4"
 
 	tests := []struct {
 		name               string
@@ -1038,7 +1038,7 @@ func Test_queryServer_ReverseResolveAddress(t *testing.T) {
 	const ica = "dym1zg69v7yszg69v7yszg69v7yszg69v7yszg69v7yszg69v7yszg6qrz80ul"
 	ica0x := common.BytesToHash(sdk.MustAccAddressFromBech32(ica)).Hex()
 
-	cosmosAcc := "cosmos18wvvwfmq77a6d8tza4h5sfuy2yj3jj88yqg82a"
+	const cosmosAcc = "cosmos18wvvwfmq77a6d8tza4h5sfuy2yj3jj88yqg82a"
 	_, cosmosAcc0xBz, err := bech32.DecodeAndConvert(cosmosAcc)
 	require.NoError(t, err)
 	cosmosAcc0x := common.BytesToAddress(cosmosAcc0xBz).Hex()

@@ -57,8 +57,8 @@ func Test_msgServer_RegisterName(t *testing.T) {
 		}, dymnstypes.ErrValidationFailed.Error())
 	})
 
-	buyer := "dym1fl48vsnmsdzcv85q5d2q4z5ajdha8yu38x9fue"
-	previousOwner := "dym1gtcunp63a3aqypr250csar4devn8fjpqulq8d4"
+	const buyer = "dym1fl48vsnmsdzcv85q5d2q4z5ajdha8yu38x9fue"
+	const previousOwner = "dym1gtcunp63a3aqypr250csar4devn8fjpqulq8d4"
 	var originalModuleBalance int64 = 88
 
 	tests := []struct {
@@ -631,8 +631,8 @@ func TestEstimateRegisterName(t *testing.T) {
 	params.Price.Price_5PlusLetters = sdk.NewInt(price5PlusL)
 	params.Price.PriceExtends = sdk.NewInt(extendsPrice)
 
-	buyer := "dym1fl48vsnmsdzcv85q5d2q4z5ajdha8yu38x9fue"
-	previousOwner := "dym1gtcunp63a3aqypr250csar4devn8fjpqulq8d4"
+	const buyer = "dym1fl48vsnmsdzcv85q5d2q4z5ajdha8yu38x9fue"
+	const previousOwner = "dym1gtcunp63a3aqypr250csar4devn8fjpqulq8d4"
 
 	tests := []struct {
 		name               string

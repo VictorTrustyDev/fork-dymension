@@ -36,9 +36,9 @@ func Test_msgServer_PurchaseName(t *testing.T) {
 		}, dymnstypes.ErrValidationFailed.Error())
 	})
 
-	owner := "dym1fl48vsnmsdzcv85q5d2q4z5ajdha8yu38x9fue"
-	buyer := "dym1gtcunp63a3aqypr250csar4devn8fjpqulq8d4"
-	previousBidder := "dym1tygms3xhhs3yv487phx3dw4a95jn7t7lnxec2d"
+	const owner = "dym1fl48vsnmsdzcv85q5d2q4z5ajdha8yu38x9fue"
+	const buyer = "dym1gtcunp63a3aqypr250csar4devn8fjpqulq8d4"
+	const previousBidder = "dym1tygms3xhhs3yv487phx3dw4a95jn7t7lnxec2d"
 
 	originalDymNameExpiry := futureEpoch
 	dymName := dymnstypes.DymName{

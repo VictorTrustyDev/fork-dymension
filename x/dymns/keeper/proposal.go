@@ -1,7 +1,6 @@
 package keeper
 
 import (
-	"cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	dymnstypes "github.com/dymensionxyz/dymension/v3/x/dymns/types"
 )
@@ -64,12 +63,6 @@ func (k Keeper) migrateChainIdsInParams(ctx sdk.Context, previousChainIdsToNewCh
 		params.Chains.CoinType60ChainIds = newCoinType60ChainIds
 	}
 
-	if err := params.Validate(); err != nil {
-		// TODO DymNS: write test-case that cover this error then delete this statement
-		//  because SetParams already validate the params
-		return errors.Wrap(err, "failed to update params")
-	}
-
 	if err := k.SetParams(ctx, params); err != nil {
 		k.Logger(ctx).Error(
 			"failed to update params",
@@ -125,35 +118,18 @@ func (k Keeper) migrateChainIdsInDymNames(ctx sdk.Context, previousChainIdsToNew
 			continue
 		}
 
-		// from here, any step can procedures dirty state, so we need to abort the migration
+		// From here, any step can procedures dirty state, so we need to abort the migration
 
-		if err := k.BeforeDymNameConfigChanged(ctx, dymName.Name); err != nil {
-			k.Logger(ctx).Error(
-				"failed to migrate chain ids for Dym-Name",
-				"dymName", dymName.Name,
-				"step", "BeforeDymNameConfigChanged",
-				"error", err,
-				"migration-state", "aborted",
-			)
-			return err
-		}
+		// We do not call BeforeDymNameConfigChanged and AfterDymNameConfigChanged
+		// here because we only change the chain id, which does not affect any data
+		// that need to be updated in those methods, so we can skip them to reduce IO.
+		// Reverse-resolve records are re-computed in runtime anyway.
 
 		if err := k.SetDymName(ctx, dymName); err != nil {
 			k.Logger(ctx).Error(
 				"failed to migrate chain ids for Dym-Name",
 				"dymName", dymName.Name,
 				"step", "SetDymName",
-				"error", err,
-				"migration-state", "aborted",
-			)
-			return err
-		}
-
-		if err := k.AfterDymNameConfigChanged(ctx, dymName.Name); err != nil {
-			k.Logger(ctx).Error(
-				"failed to migrate chain ids for Dym-Name",
-				"dymName", dymName.Name,
-				"step", "AfterDymNameConfigChanged",
 				"error", err,
 				"migration-state", "aborted",
 			)
