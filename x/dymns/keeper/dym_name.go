@@ -603,6 +603,45 @@ func (k Keeper) ReverseResolveDymNameAddressFrom0xAddress(ctx sdk.Context, input
 	return
 }
 
+// TODO DymNS: implement:
+//  if the input address is bech32, if the working chain-id is an coin-type-60 chain-id,
+//  then cast the address to 0x address and resolve from 0x address.
+//  Otherwise resolve from bech32 address only.
+
+/*
+func (k Keeper) ReverseResolveDymNameAddress(ctx sdk.Context, inputAddress, workingChainId string) (outputDymNameAddresses dymnstypes.ReverseResolvedDymNameAddresses, err error) {
+	inputAddress = strings.ToLower(inputAddress)
+
+	isBech32Addr := dymnsutils.IsValidBech32AccountAddress(inputAddress, false)
+	is0xAddr := dymnsutils.IsValid0xAddress(inputAddress)
+
+	if inputAddress == "" {
+		return nil, sdkerrors.ErrInvalidRequest.Wrap("address cannot be blank")
+	}
+
+	if !isBech32Addr && !is0xAddr {
+		return nil, sdkerrors.ErrInvalidRequest.Wrapf("not supported address format: %s", inputAddress)
+	}
+
+	if workingChainId == "" {
+		return nil, sdkerrors.ErrInvalidRequest.Wrap("working chain-id cannot be blank")
+	}
+
+	if !dymnsutils.IsValidChainIdFormat(workingChainId) {
+		return nil, sdkerrors.ErrInvalidRequest.Wrapf("invalid chain-id format: %s", workingChainId)
+	}
+
+	workingChainIdIsHostChain := workingChainId == ctx.ChainID()
+
+	//
+
+	outputDymNameAddresses = k.ReplaceChainIdWithAliasIfPossible(ctx, outputDymNameAddresses)
+	outputDymNameAddresses.Sort()
+
+	return
+}
+*/
+
 func (k Keeper) ReplaceChainIdWithAliasIfPossible(ctx sdk.Context, reverseResolvedRecords dymnstypes.ReverseResolvedDymNameAddresses) []dymnstypes.ReverseResolvedDymNameAddress {
 	if len(reverseResolvedRecords) > 0 {
 		for i, reverseResolvedRecord := range reverseResolvedRecords {
