@@ -44,8 +44,8 @@ func (k Keeper) CheckChainIsCoinType60ByChainId(ctx sdk.Context, chainId string)
 		return true
 	}
 
-	for _, coinType60ChainIds := range k.ChainsParams(ctx).CoinType60ChainIds {
-		if coinType60ChainIds == chainId {
+	for _, coinType60ChainId := range k.ChainsParams(ctx).CoinType60ChainIds {
+		if coinType60ChainId == chainId {
 			return true
 		}
 	}

@@ -72,7 +72,7 @@ func Test_msgServer_UpdateResolveAddress(t *testing.T) {
 		_, bz, err := bech32.DecodeAndConvert(bech32Addr)
 		require.NoError(ts.t, err)
 
-		dymNames, err := ts.dk.GetDymNamesContains0xAddress(ts.ctx, bz, 0)
+		dymNames, err := ts.dk.GetDymNamesContainsHexAddress(ts.ctx, bz, 0)
 		require.NoError(ts.t, err)
 		require.Len(ts.t, dymNames, len(names))
 		sort.Strings(names)

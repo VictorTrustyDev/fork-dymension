@@ -122,39 +122,39 @@ func TestIsValidBech32AccountAddress(t *testing.T) {
 }
 
 //goland:noinspection SpellCheckingInspection
-func TestIsValid0xAddress(t *testing.T) {
+func TestIsValidHexAddress(t *testing.T) {
 	tests := []struct {
 		name    string
 		address string
 		want    bool
 	}{
 		{
-			name:    "allow 0x hex address with 20 bytes",
+			name:    "allow hex address with 20 bytes",
 			address: "0x1234567890123456789012345678901234567890",
 			want:    true,
 		},
 		{
-			name:    "allow 0x hex address with 32 bytes, Interchain Account",
+			name:    "allow hex address with 32 bytes, Interchain Account",
 			address: "0x1234567890123456789012345678901234567890123456789012345678901234",
 			want:    true,
 		},
 		{
-			name:    "disallow 0x hex address with 19 bytes",
+			name:    "disallow hex address with 19 bytes",
 			address: "0x123456789012345678901234567890123456789",
 			want:    false,
 		},
 		{
-			name:    "disallow 0x hex address with 21 bytes",
+			name:    "disallow hex address with 21 bytes",
 			address: "0x12345678901234567890123456789012345678901",
 			want:    false,
 		},
 		{
-			name:    "disallow 0x hex address with 31 bytes",
+			name:    "disallow hex address with 31 bytes",
 			address: "0x123456789012345678901234567890123456789012345678901234567890123",
 			want:    false,
 		},
 		{
-			name:    "disallow 0x hex address with 33 bytes",
+			name:    "disallow hex address with 33 bytes",
 			address: "0x12345678901234567890123456789012345678901234567890123456789012345",
 			want:    false,
 		},
@@ -171,7 +171,7 @@ func TestIsValid0xAddress(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			require.Equal(t, tt.want, IsValid0xAddress(tt.address))
+			require.Equal(t, tt.want, IsValidHexAddress(tt.address))
 		})
 	}
 }

@@ -65,7 +65,7 @@ func (k Keeper) BeforeDymNameConfigChanged(ctx sdk.Context, name string) error {
 		return nil
 	}
 
-	configuredAddresses, coinType60HexAddresses := dymName.GetAddressesForReverseMapping(func(chainId string) bool {
+	configuredAddresses, hexAddresses := dymName.GetAddressesForReverseMapping(func(chainId string) bool {
 		return k.CheckChainIsCoinType60ByChainId(ctx, chainId)
 	})
 	for configuredAddress := range configuredAddresses {
@@ -73,14 +73,14 @@ func (k Keeper) BeforeDymNameConfigChanged(ctx sdk.Context, name string) error {
 			return err
 		}
 	}
-	for coinType60HexAddress := range coinType60HexAddresses {
+	for hexAddress := range hexAddresses {
 		var bzAddr []byte
-		if len(coinType60HexAddress) != 42 {
-			bzAddr = common.HexToHash(coinType60HexAddress).Bytes()
+		if len(hexAddress) != 42 {
+			bzAddr = common.HexToHash(hexAddress).Bytes()
 		} else {
-			bzAddr = common.HexToAddress(coinType60HexAddress).Bytes()
+			bzAddr = common.HexToAddress(hexAddress).Bytes()
 		}
-		if err := k.RemoveReverseMapping0xAddressToDymName(ctx, bzAddr, name); err != nil {
+		if err := k.RemoveReverseMappingHexAddressToDymName(ctx, bzAddr, name); err != nil {
 			return err
 		}
 	}
@@ -95,7 +95,7 @@ func (k Keeper) AfterDymNameConfigChanged(ctx sdk.Context, name string) error {
 		return dymnstypes.ErrDymNameNotFound.Wrap(name)
 	}
 
-	configuredAddresses, coinType60HexAddresses := dymName.GetAddressesForReverseMapping(func(chainId string) bool {
+	configuredAddresses, hexAddresses := dymName.GetAddressesForReverseMapping(func(chainId string) bool {
 		return k.CheckChainIsCoinType60ByChainId(ctx, chainId)
 	})
 	for configuredAddress := range configuredAddresses {
@@ -103,14 +103,14 @@ func (k Keeper) AfterDymNameConfigChanged(ctx sdk.Context, name string) error {
 			return err
 		}
 	}
-	for coinType60HexAddress := range coinType60HexAddresses {
+	for hexAddress := range hexAddresses {
 		var bzAddr []byte
-		if len(coinType60HexAddress) != 42 {
-			bzAddr = common.HexToHash(coinType60HexAddress).Bytes()
+		if len(hexAddress) != 42 {
+			bzAddr = common.HexToHash(hexAddress).Bytes()
 		} else {
-			bzAddr = common.HexToAddress(coinType60HexAddress).Bytes()
+			bzAddr = common.HexToAddress(hexAddress).Bytes()
 		}
-		if err := k.AddReverseMapping0xAddressToDymName(ctx, bzAddr, name); err != nil {
+		if err := k.AddReverseMappingHexAddressToDymName(ctx, bzAddr, name); err != nil {
 			return err
 		}
 	}
@@ -235,7 +235,7 @@ func (k Keeper) ResolveByDymNameAddress(ctx sdk.Context, dymNameAddress string) 
 		}
 
 		var accAddr sdk.AccAddress
-		if dymnsutils.IsValid0xAddress(name) {
+		if dymnsutils.IsValidHexAddress(name) {
 			if len(name) == 66 {
 				accAddr = common.HexToHash(name).Bytes()
 			} else {
@@ -249,7 +249,7 @@ func (k Keeper) ResolveByDymNameAddress(ctx sdk.Context, dymNameAddress string) 
 
 			accAddr = bz
 		} else {
-			// neither 0x address nor bech32 account address
+			// neither hex address nor bech32 account address
 			return
 		}
 
@@ -501,7 +501,7 @@ func ParseDymNameAddress(
 		// when no sub-name, we have 2 valid formats that won't pass Dym-Name validation
 
 		// 0x1234...6789@nim
-		if dymnsutils.IsValid0xAddress(dymName) {
+		if dymnsutils.IsValidHexAddress(dymName) {
 			return
 		} else if dymnsutils.IsValidBech32AccountAddress(dymName, false) {
 			return
@@ -556,30 +556,30 @@ func (k Keeper) ReverseResolveDymNameAddressFromBech32Address(ctx sdk.Context, b
 	return
 }
 
-func (k Keeper) ReverseResolveDymNameAddressFrom0xAddress(ctx sdk.Context, input0xAddress string) (outputDymNameAddresses dymnstypes.ReverseResolvedDymNameAddresses, err error) {
-	input0xAddress = strings.ToLower(input0xAddress)
+func (k Keeper) ReverseResolveDymNameAddressFromHexAddress(ctx sdk.Context, inputHexAddress string) (outputDymNameAddresses dymnstypes.ReverseResolvedDymNameAddresses, err error) {
+	inputHexAddress = strings.ToLower(inputHexAddress)
 
-	if !dymnsutils.IsValid0xAddress(input0xAddress) {
-		return nil, sdkerrors.ErrInvalidRequest.Wrapf("invalid 0x address: %s", input0xAddress)
+	if !dymnsutils.IsValidHexAddress(inputHexAddress) {
+		return nil, sdkerrors.ErrInvalidRequest.Wrapf("invalid hex address: %s", inputHexAddress)
 	}
 
 	var bzAddr []byte
-	if len(input0xAddress) == 66 {
-		bzAddr = common.HexToHash(input0xAddress).Bytes()
+	if len(inputHexAddress) == 66 {
+		bzAddr = common.HexToHash(inputHexAddress).Bytes()
 	} else {
-		bzAddr = common.HexToAddress(input0xAddress).Bytes()
+		bzAddr = common.HexToAddress(inputHexAddress).Bytes()
 	}
 
-	dymNames, err1 := k.GetDymNamesContains0xAddress(ctx, bzAddr, ctx.BlockTime().Unix())
+	dymNames, err1 := k.GetDymNamesContainsHexAddress(ctx, bzAddr, ctx.BlockTime().Unix())
 	if err1 != nil {
 		return nil, err1
 	}
 
 	for _, dymName := range dymNames {
-		_, coinType60HexAddresses := dymName.GetAddressesForReverseMapping(func(chainId string) bool {
+		_, hexAddresses := dymName.GetAddressesForReverseMapping(func(chainId string) bool {
 			return k.CheckChainIsCoinType60ByChainId(ctx, chainId)
 		})
-		configs, found := coinType60HexAddresses[input0xAddress]
+		configs, found := hexAddresses[inputHexAddress]
 		if !found {
 			continue
 		}
@@ -605,7 +605,7 @@ func (k Keeper) ReverseResolveDymNameAddressFrom0xAddress(ctx sdk.Context, input
 
 // TODO DymNS: implement:
 //  if the input address is bech32, if the working chain-id is an coin-type-60 chain-id,
-//  then cast the address to 0x address and resolve from 0x address.
+//  then cast the address to hex address and resolve from hex address.
 //  Otherwise resolve from bech32 address only.
 
 /*
@@ -613,7 +613,7 @@ func (k Keeper) ReverseResolveDymNameAddress(ctx sdk.Context, inputAddress, work
 	inputAddress = strings.ToLower(inputAddress)
 
 	isBech32Addr := dymnsutils.IsValidBech32AccountAddress(inputAddress, false)
-	is0xAddr := dymnsutils.IsValid0xAddress(inputAddress)
+	is0xAddr := dymnsutils.IsValidHexAddress(inputAddress)
 
 	if inputAddress == "" {
 		return nil, sdkerrors.ErrInvalidRequest.Wrap("address cannot be blank")

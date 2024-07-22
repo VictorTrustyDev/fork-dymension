@@ -620,7 +620,7 @@ func TestDymName_GetAddressesForReverseMapping(t *testing.T) {
 		customFuncCheckChainIdIsCoinType60 func(string) bool
 		wantPanic                          bool
 		wantConfiguredAddresses            map[string][]DymNameConfig
-		wantCoinType60HexAddresses         map[string][]DymNameConfig
+		wantHexAddresses                   map[string][]DymNameConfig
 	}{
 		{
 			name: "pass",
@@ -670,7 +670,7 @@ func TestDymName_GetAddressesForReverseMapping(t *testing.T) {
 					},
 				},
 			},
-			wantCoinType60HexAddresses: map[string][]DymNameConfig{
+			wantHexAddresses: map[string][]DymNameConfig{
 				ownerHex: {
 					{
 						Type:    DymNameConfigType_NAME,
@@ -729,7 +729,7 @@ func TestDymName_GetAddressesForReverseMapping(t *testing.T) {
 					},
 				},
 			},
-			wantCoinType60HexAddresses: map[string][]DymNameConfig{
+			wantHexAddresses: map[string][]DymNameConfig{
 				ownerHex: {
 					{
 						Type:    DymNameConfigType_NAME,
@@ -782,7 +782,7 @@ func TestDymName_GetAddressesForReverseMapping(t *testing.T) {
 					},
 				},
 			},
-			wantCoinType60HexAddresses: map[string][]DymNameConfig{
+			wantHexAddresses: map[string][]DymNameConfig{
 				ownerHex: {
 					{
 						Type:    DymNameConfigType_NAME,
@@ -833,7 +833,7 @@ func TestDymName_GetAddressesForReverseMapping(t *testing.T) {
 					},
 				},
 			},
-			wantCoinType60HexAddresses: map[string][]DymNameConfig{
+			wantHexAddresses: map[string][]DymNameConfig{
 				ownerHex: { /*only one*/
 					{
 						Type:    DymNameConfigType_NAME,
@@ -878,7 +878,7 @@ func TestDymName_GetAddressesForReverseMapping(t *testing.T) {
 					},
 				},
 			},
-			wantCoinType60HexAddresses: map[string][]DymNameConfig{
+			wantHexAddresses: map[string][]DymNameConfig{
 				ownerHex: { // default config resolved to owner
 					{
 						Type:    DymNameConfigType_NAME,
@@ -917,7 +917,7 @@ func TestDymName_GetAddressesForReverseMapping(t *testing.T) {
 					},
 				},
 			},
-			wantCoinType60HexAddresses: map[string][]DymNameConfig{
+			wantHexAddresses: map[string][]DymNameConfig{
 				bondedPoolHex: { // respect
 					{
 						Type:    DymNameConfigType_NAME,
@@ -960,7 +960,7 @@ func TestDymName_GetAddressesForReverseMapping(t *testing.T) {
 					},
 				},
 			},
-			wantCoinType60HexAddresses: map[string][]DymNameConfig{
+			wantHexAddresses: map[string][]DymNameConfig{
 				bondedPoolHex: { // respect
 					{
 						Type:    DymNameConfigType_NAME,
@@ -1011,7 +1011,7 @@ func TestDymName_GetAddressesForReverseMapping(t *testing.T) {
 					},
 				},
 			},
-			wantCoinType60HexAddresses: map[string][]DymNameConfig{
+			wantHexAddresses: map[string][]DymNameConfig{
 				ownerHex: {
 					{
 						Type:    DymNameConfigType_NAME,
@@ -1081,7 +1081,7 @@ func TestDymName_GetAddressesForReverseMapping(t *testing.T) {
 					},
 				},
 			},
-			wantCoinType60HexAddresses: map[string][]DymNameConfig{
+			wantHexAddresses: map[string][]DymNameConfig{
 				ownerHex: {
 					{
 						Type:    DymNameConfigType_NAME,
@@ -1165,7 +1165,7 @@ func TestDymName_GetAddressesForReverseMapping(t *testing.T) {
 					},
 				},
 			},
-			wantCoinType60HexAddresses: map[string][]DymNameConfig{
+			wantHexAddresses: map[string][]DymNameConfig{
 				ownerHex: {
 					{
 						Type:    DymNameConfigType_NAME,
@@ -1229,7 +1229,7 @@ func TestDymName_GetAddressesForReverseMapping(t *testing.T) {
 					},
 				},
 			},
-			wantCoinType60HexAddresses: map[string][]DymNameConfig{
+			wantHexAddresses: map[string][]DymNameConfig{
 				ownerHex: {
 					{
 						Type:    DymNameConfigType_NAME,
@@ -1325,7 +1325,7 @@ func TestDymName_GetAddressesForReverseMapping(t *testing.T) {
 					},
 				},
 			},
-			wantCoinType60HexAddresses: map[string][]DymNameConfig{
+			wantHexAddresses: map[string][]DymNameConfig{
 				ownerHex: {
 					{
 						Type:    DymNameConfigType_NAME,
@@ -1404,7 +1404,7 @@ func TestDymName_GetAddressesForReverseMapping(t *testing.T) {
 					},
 				},
 			},
-			wantCoinType60HexAddresses: map[string][]DymNameConfig{
+			wantHexAddresses: map[string][]DymNameConfig{
 				ownerHex: {
 					{
 						Type:    DymNameConfigType_NAME,
@@ -1470,8 +1470,8 @@ func TestDymName_GetAddressesForReverseMapping(t *testing.T) {
 			if !reflect.DeepEqual(tt.wantConfiguredAddresses, gotConfiguredAddresses) {
 				t.Errorf("gotConfiguredAddresses = %v, want %v", gotConfiguredAddresses, tt.wantConfiguredAddresses)
 			}
-			if !reflect.DeepEqual(tt.wantCoinType60HexAddresses, gotCoinType60HexAddresses) {
-				t.Errorf("gotCoinType60HexAddresses = %v, want %v", gotCoinType60HexAddresses, tt.wantCoinType60HexAddresses)
+			if !reflect.DeepEqual(tt.wantHexAddresses, gotCoinType60HexAddresses) {
+				t.Errorf("gotCoinType60HexAddresses = %v, want %v", gotCoinType60HexAddresses, tt.wantHexAddresses)
 			}
 		})
 	}

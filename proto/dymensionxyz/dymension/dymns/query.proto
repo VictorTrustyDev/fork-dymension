@@ -162,7 +162,7 @@ message QueryEstimateRegisterNameResponse {
 
 // QueryReverseResolveAddressRequest is the request type for the Query/ReverseResolveAddress RPC method.
 message QueryReverseResolveAddressRequest {
-  // addresses defines the addresses to reverse resolve. Can be both bech32 and 0x addresses.
+  // addresses defines the addresses to reverse resolve. Can be both bech32 and hex addresses.
   repeated string addresses = 1;
 }
 

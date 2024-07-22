@@ -243,7 +243,7 @@ func Test_msgServer_TransferOwnership(t *testing.T) {
 						require.NoError(t, err)
 						require.Len(t, names, 1, "reverse mapping should be kept")
 
-						names, err = dk.GetDymNamesContains0xAddress(ctx,
+						names, err = dk.GetDymNamesContainsHexAddress(ctx,
 							sdk.MustAccAddressFromBech32(tt.dymName.Owner).Bytes(),
 							now.Unix(),
 						)
@@ -288,7 +288,7 @@ func Test_msgServer_TransferOwnership(t *testing.T) {
 			require.NoError(t, err)
 			require.Empty(t, names, "reverse mapping of previous owner should be removed")
 
-			names, err = dk.GetDymNamesContains0xAddress(ctx,
+			names, err = dk.GetDymNamesContainsHexAddress(ctx,
 				sdk.MustAccAddressFromBech32(previousOwner).Bytes(),
 				now.Unix(),
 			)
@@ -303,7 +303,7 @@ func Test_msgServer_TransferOwnership(t *testing.T) {
 			require.NoError(t, err)
 			require.Len(t, names, 1, "reverse mapping of new owner should be added")
 
-			names, err = dk.GetDymNamesContains0xAddress(ctx,
+			names, err = dk.GetDymNamesContainsHexAddress(ctx,
 				sdk.MustAccAddressFromBech32(useNewOwner).Bytes(),
 				now.Unix(),
 			)

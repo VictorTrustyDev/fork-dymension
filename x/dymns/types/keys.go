@@ -20,10 +20,10 @@ const (
 
 // prefix bytes for the DymNS persistent store
 const (
-	prefixDymName                                  = iota + 1
-	prefixRvlDymNamesOwnedByAccount                // reverse lookup store
-	prefixRvlConfiguredAddressToDymNamesInclude    // reverse lookup store
-	prefixRvlCoinType60HexAddressToDymNamesInclude // reverse lookup store
+	prefixDymName                               = iota + 1
+	prefixRvlDymNamesOwnedByAccount             // reverse lookup store
+	prefixRvlConfiguredAddressToDymNamesInclude // reverse lookup store
+	prefixRvlHexAddressToDymNamesInclude        // reverse lookup store
 	prefixSellOrder
 	prefixActiveSellOrdersExpiration
 	prefixHistoricalSellOrders
@@ -39,7 +39,7 @@ var (
 
 	KeyPrefixRvlConfiguredAddressToDymNamesInclude = []byte{prefixRvlConfiguredAddressToDymNamesInclude}
 
-	KeyPrefixRvlCoinType60HexAddressToDymNamesInclude = []byte{prefixRvlCoinType60HexAddressToDymNamesInclude}
+	KeyPrefixRvlHexAddressToDymNamesInclude = []byte{prefixRvlHexAddressToDymNamesInclude}
 
 	// KeyPrefixSellOrder is the key prefix for the active Sell-Order records
 	KeyPrefixSellOrder = []byte{prefixSellOrder}
@@ -70,9 +70,9 @@ func ConfiguredAddressToDymNamesIncludeRvlKey(address string) []byte {
 	return append(KeyPrefixRvlConfiguredAddressToDymNamesInclude, []byte(address)...)
 }
 
-// CoinType60HexAddressToDymNamesIncludeRvlKey returns a key for reverse lookup for Dym-Names that contain the 0x address (coin-type 60, secp256k1, ethereum address)
-func CoinType60HexAddressToDymNamesIncludeRvlKey(coinType60AccAddr []byte) []byte {
-	return append(KeyPrefixRvlCoinType60HexAddressToDymNamesInclude, coinType60AccAddr...)
+// HexAddressToDymNamesIncludeRvlKey returns a key for reverse lookup for Dym-Names that contain the hex address (coin-type 60, secp256k1, ethereum address)
+func HexAddressToDymNamesIncludeRvlKey(bzHexAddr []byte) []byte {
+	return append(KeyPrefixRvlHexAddressToDymNamesInclude, bzHexAddr...)
 }
 
 // SellOrderKey returns a key for the active Sell-Order of the Dym-Name

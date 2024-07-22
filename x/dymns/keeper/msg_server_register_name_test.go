@@ -574,7 +574,7 @@ func Test_msgServer_RegisterName(t *testing.T) {
 						require.NoError(t, err)
 						require.Empty(t, mappedDymNamesByPreviousOwner, "reverse mapping should be removed")
 
-						mappedDymNamesByPreviousOwner, err = dk.GetDymNamesContains0xAddress(ctx,
+						mappedDymNamesByPreviousOwner, err = dk.GetDymNamesContainsHexAddress(ctx,
 							sdk.MustAccAddressFromBech32(tt.existingDymName.Owner).Bytes(),
 							now.Unix(),
 						)
@@ -599,7 +599,7 @@ func Test_msgServer_RegisterName(t *testing.T) {
 			require.Len(t, mappedDymNamesByBuyer, 1, "reverse mapping should be set")
 			require.Equal(t, useRecordName, mappedDymNamesByBuyer[0].Name)
 
-			mappedDymNamesByBuyer, err = dk.GetDymNamesContains0xAddress(ctx,
+			mappedDymNamesByBuyer, err = dk.GetDymNamesContainsHexAddress(ctx,
 				sdk.MustAccAddressFromBech32(tt.buyer).Bytes(),
 				now.Unix(),
 			)

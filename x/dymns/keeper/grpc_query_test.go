@@ -1002,7 +1002,7 @@ func Test_queryServer_ReverseResolveAddress(t *testing.T) {
 		err := dk.SetParams(ctx, moduleParams)
 		require.NoError(t, err)
 
-		// add rollapp to enable 0x address reverse mapping for this chain
+		// add rollapp to enable hex address reverse mapping for this chain
 		rk.SetRollapp(ctx, rollapptypes.Rollapp{
 			RollappId: nimChainId,
 			Creator:   "dym1fl48vsnmsdzcv85q5d2q4z5ajdha8yu38x9fue",
@@ -1260,7 +1260,7 @@ func Test_queryServer_ReverseResolveAddress(t *testing.T) {
 			},
 		},
 		{
-			name: "pass - chains not coin-type-60 should not support reverse-resolve 0x address",
+			name: "pass - chains not coin-type-60 should not support reverse-resolve hex address",
 			dymNames: []dymnstypes.DymName{
 				{
 					Name:       "a",

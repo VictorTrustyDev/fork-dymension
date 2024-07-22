@@ -73,7 +73,7 @@ func TestKeeper_GetSetDeleteDymName(t *testing.T) {
 			require.Empty(t, dymNames, "reverse mapping should be removed")
 
 			dymNames = dk.GenericGetReverseLookupDymNamesRecord(ctx,
-				dymnstypes.CoinType60HexAddressToDymNamesIncludeRvlKey(sdk.MustAccAddressFromBech32(owner)),
+				dymnstypes.HexAddressToDymNamesIncludeRvlKey(sdk.MustAccAddressFromBech32(owner)),
 			)
 			require.NoError(t, err)
 			require.Empty(t, dymNames, "reverse mapping should be removed")
@@ -88,7 +88,7 @@ func TestKeeper_GetSetDeleteDymName(t *testing.T) {
 			require.NoError(t, err)
 			require.Empty(t, dymNames, "reverse mapping should be removed")
 
-			dymNames, err = dk.GetDymNamesContains0xAddress(ctx, sdk.MustAccAddressFromBech32(owner).Bytes(), 0)
+			dymNames, err = dk.GetDymNamesContainsHexAddress(ctx, sdk.MustAccAddressFromBech32(owner).Bytes(), 0)
 			require.NoError(t, err)
 			require.Empty(t, dymNames, "reverse mapping should be removed")
 		})
@@ -239,14 +239,14 @@ func TestKeeper_BeforeAfterDymNameConfigChanged(t *testing.T) {
 		require.Equal(t, dymName.Name, names[0].Name)
 	}
 
-	require0xAddressMappedNoDymName := func(addr []byte, ctx sdk.Context, dk dymnskeeper.Keeper) {
-		names, err := dk.GetDymNamesContains0xAddress(ctx, addr, 0)
+	requireHexAddressMappedNoDymName := func(addr []byte, ctx sdk.Context, dk dymnskeeper.Keeper) {
+		names, err := dk.GetDymNamesContainsHexAddress(ctx, addr, 0)
 		require.NoError(t, err)
 		require.Empty(t, names)
 	}
 
-	require0xAddressMappedDymName := func(addr []byte, ctx sdk.Context, dk dymnskeeper.Keeper) {
-		names, err := dk.GetDymNamesContains0xAddress(ctx, addr, 0)
+	requireHexAddressMappedDymName := func(addr []byte, ctx sdk.Context, dk dymnskeeper.Keeper) {
+		names, err := dk.GetDymNamesContainsHexAddress(ctx, addr, 0)
 		require.NoError(t, err)
 		require.Len(t, names, 1)
 		require.Equal(t, dymName.Name, names[0].Name)
@@ -262,9 +262,9 @@ func TestKeeper_BeforeAfterDymNameConfigChanged(t *testing.T) {
 		requireConfiguredAddressMappedDymName(owner, ctx, dk)
 		requireConfiguredAddressMappedDymName(controller, ctx, dk)
 		requireConfiguredAddressMappedDymName(ica, ctx, dk)
-		require0xAddressMappedDymName(ownerHex, ctx, dk)
-		require0xAddressMappedDymName(controllerHex, ctx, dk)
-		require0xAddressMappedDymName(icaHex, ctx, dk)
+		requireHexAddressMappedDymName(ownerHex, ctx, dk)
+		requireHexAddressMappedDymName(controllerHex, ctx, dk)
+		requireHexAddressMappedDymName(icaHex, ctx, dk)
 
 		// do test
 
@@ -273,9 +273,9 @@ func TestKeeper_BeforeAfterDymNameConfigChanged(t *testing.T) {
 		requireConfiguredAddressMappedNoDymName(owner, ctx, dk)
 		requireConfiguredAddressMappedNoDymName(controller, ctx, dk)
 		requireConfiguredAddressMappedNoDymName(ica, ctx, dk)
-		require0xAddressMappedNoDymName(ownerHex, ctx, dk)
-		require0xAddressMappedNoDymName(controllerHex, ctx, dk)
-		require0xAddressMappedNoDymName(icaHex, ctx, dk)
+		requireHexAddressMappedNoDymName(ownerHex, ctx, dk)
+		requireHexAddressMappedNoDymName(controllerHex, ctx, dk)
+		requireHexAddressMappedNoDymName(icaHex, ctx, dk)
 	})
 
 	t.Run("after run BeforeDymNameConfigChanged, Dym-Name must be kept", func(t *testing.T) {
@@ -298,9 +298,9 @@ func TestKeeper_BeforeAfterDymNameConfigChanged(t *testing.T) {
 		requireConfiguredAddressMappedNoDymName(owner, ctx, dk)
 		requireConfiguredAddressMappedNoDymName(controller, ctx, dk)
 		requireConfiguredAddressMappedNoDymName(ica, ctx, dk)
-		require0xAddressMappedNoDymName(ownerHex, ctx, dk)
-		require0xAddressMappedNoDymName(controllerHex, ctx, dk)
-		require0xAddressMappedNoDymName(icaHex, ctx, dk)
+		requireHexAddressMappedNoDymName(ownerHex, ctx, dk)
+		requireHexAddressMappedNoDymName(controllerHex, ctx, dk)
+		requireHexAddressMappedNoDymName(icaHex, ctx, dk)
 
 		// do test
 
@@ -309,9 +309,9 @@ func TestKeeper_BeforeAfterDymNameConfigChanged(t *testing.T) {
 		requireConfiguredAddressMappedDymName(owner, ctx, dk)
 		requireConfiguredAddressMappedDymName(controller, ctx, dk)
 		requireConfiguredAddressMappedDymName(ica, ctx, dk)
-		require0xAddressMappedDymName(ownerHex, ctx, dk)
-		require0xAddressMappedDymName(controllerHex, ctx, dk)
-		require0xAddressMappedDymName(icaHex, ctx, dk)
+		requireHexAddressMappedDymName(ownerHex, ctx, dk)
+		requireHexAddressMappedDymName(controllerHex, ctx, dk)
+		requireHexAddressMappedDymName(icaHex, ctx, dk)
 	})
 
 	t.Run("after run AfterDymNameConfigChanged, Dym-Name must be kept", func(t *testing.T) {
@@ -2035,7 +2035,7 @@ func Test_ParseDymNameAddress(t *testing.T) {
 			wantErrContains: dymnstypes.ErrBadDymNameAddress.Error(),
 		},
 		{
-			name:               "allow 0x address pattern",
+			name:               "allow hex address pattern",
 			dymNameAddress:     "0x1234567890123456789012345678901234567890@dym",
 			wantErr:            false,
 			wantSubName:        "",
@@ -2043,7 +2043,7 @@ func Test_ParseDymNameAddress(t *testing.T) {
 			wantChainIdOrAlias: "dym",
 		},
 		{
-			name:               "allow 32 bytes 0x address pattern",
+			name:               "allow 32 bytes hex address pattern",
 			dymNameAddress:     "0x1234567890123456789012345678901234567890123456789012345678901234@dym",
 			wantErr:            false,
 			wantSubName:        "",
@@ -2051,25 +2051,25 @@ func Test_ParseDymNameAddress(t *testing.T) {
 			wantChainIdOrAlias: "dym",
 		},
 		{
-			name:            "reject non-20 or 32 bytes 0x address pattern, case 19 bytes",
+			name:            "reject non-20 or 32 bytes hex address pattern, case 19 bytes",
 			dymNameAddress:  "0x123456789012345678901234567890123456789@dym",
 			wantErr:         true,
 			wantErrContains: dymnstypes.ErrBadDymNameAddress.Error(),
 		},
 		{
-			name:            "reject non-20 or 32 bytes 0x address pattern, case 21 bytes",
+			name:            "reject non-20 or 32 bytes hex address pattern, case 21 bytes",
 			dymNameAddress:  "0x12345678901234567890123456789012345678901@dym",
 			wantErr:         true,
 			wantErrContains: dymnstypes.ErrBadDymNameAddress.Error(),
 		},
 		{
-			name:            "reject non-20 or 32 bytes 0x address pattern, case 31 bytes",
+			name:            "reject non-20 or 32 bytes hex address pattern, case 31 bytes",
 			dymNameAddress:  "0x123456789012345678901234567890123456789012345678901234567890123@dym",
 			wantErr:         true,
 			wantErrContains: dymnstypes.ErrBadDymNameAddress.Error(),
 		},
 		{
-			name:            "reject non-20 or 32 bytes 0x address pattern, case 33 bytes",
+			name:            "reject non-20 or 32 bytes hex address pattern, case 33 bytes",
 			dymNameAddress:  "0x12345678901234567890123456789012345678901234567890123456789012345@dym",
 			wantErr:         true,
 			wantErrContains: dymnstypes.ErrBadDymNameAddress.Error(),
@@ -2539,7 +2539,7 @@ func TestKeeper_ReverseResolveDymNameAddressFromBech32Address(t *testing.T) {
 }
 
 //goland:noinspection SpellCheckingInspection
-func TestKeeper_ReverseResolveDymNameAddressFrom0xAddress(t *testing.T) {
+func TestKeeper_ReverseResolveDymNameAddressFromHexAddress(t *testing.T) {
 	now := time.Now().UTC()
 	const chainId = "dymension_1100-1"
 
@@ -2725,7 +2725,7 @@ func TestKeeper_ReverseResolveDymNameAddressFrom0xAddress(t *testing.T) {
 				},
 			},
 			additionalSetup: func(dk dymnskeeper.Keeper, ctx sdk.Context) {
-				err := dk.AddReverseMapping0xAddressToDymName(ctx, common.HexToAddress(owner0x).Bytes(), "b")
+				err := dk.AddReverseMappingHexAddressToDymName(ctx, common.HexToAddress(owner0x).Bytes(), "b")
 				require.NoError(t, err)
 			},
 			addr0x:  owner0x,
@@ -2953,7 +2953,7 @@ func TestKeeper_ReverseResolveDymNameAddressFrom0xAddress(t *testing.T) {
 			},
 			addr0x:          owner,
 			wantErr:         true,
-			wantErrContains: "invalid 0x address",
+			wantErrContains: "invalid hex address",
 		},
 	}
 	for _, tt := range tests {
@@ -2962,7 +2962,7 @@ func TestKeeper_ReverseResolveDymNameAddressFrom0xAddress(t *testing.T) {
 
 			{
 				// add Blumbus and Froopyland as RollApps
-				// so that the 0x address reverse mapping records will be set
+				// so that the hex address reverse mapping records will be set
 				rk.SetRollapp(ctx, rollapptypes.Rollapp{
 					RollappId: "blumbus_111-1",
 					Creator:   owner,
@@ -2981,7 +2981,7 @@ func TestKeeper_ReverseResolveDymNameAddressFrom0xAddress(t *testing.T) {
 				tt.additionalSetup(dk, ctx)
 			}
 
-			got, err := dk.ReverseResolveDymNameAddressFrom0xAddress(ctx, tt.addr0x)
+			got, err := dk.ReverseResolveDymNameAddressFromHexAddress(ctx, tt.addr0x)
 			if tt.wantErr {
 				require.NotEmpty(t, tt.wantErrContains, "mis-configured test case")
 				require.Error(t, err)

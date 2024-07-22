@@ -127,36 +127,36 @@ func normalizeConfiguredAddressForReverseMapping(configuredAddress string) strin
 	return strings.ToLower(strings.TrimSpace(configuredAddress))
 }
 
-// AddReverseMapping0xAddressToDymName stores a reverse mapping
-// from 0x address (coin-type 60, secp256k1, ethereum address)
-// to Dym-Name which contains the 0x address, into the KVStore.
-func (k Keeper) AddReverseMapping0xAddressToDymName(ctx sdk.Context, _0xAddress []byte, name string) error {
-	if err := validate0xAddressForReverseMapping(_0xAddress); err != nil {
+// AddReverseMappingHexAddressToDymName stores a reverse mapping
+// from hex address (coin-type 60, secp256k1, ethereum address)
+// to Dym-Name which contains the hex address, into the KVStore.
+func (k Keeper) AddReverseMappingHexAddressToDymName(ctx sdk.Context, bzHexAddr []byte, name string) error {
+	if err := validateHexAddressForReverseMapping(bzHexAddr); err != nil {
 		return err
 	}
 
 	return k.GenericAddReverseLookupDymNamesRecord(
 		ctx,
-		dymnstypes.CoinType60HexAddressToDymNamesIncludeRvlKey(_0xAddress),
+		dymnstypes.HexAddressToDymNamesIncludeRvlKey(bzHexAddr),
 		name,
 	)
 }
 
-// GetDymNamesContains0xAddress returns all Dym-Names
-// that contains the 0x address (coin-type 60, secp256k1, ethereum address).
-func (k Keeper) GetDymNamesContains0xAddress(
-	ctx sdk.Context, _0xAddress []byte, nowEpoch int64,
+// GetDymNamesContainsHexAddress returns all Dym-Names
+// that contains the hex address (coin-type 60, secp256k1, ethereum address).
+func (k Keeper) GetDymNamesContainsHexAddress(
+	ctx sdk.Context, bzHexAddr []byte, nowEpoch int64,
 ) ([]dymnstypes.DymName, error) {
-	if err := validate0xAddressForReverseMapping(_0xAddress); err != nil {
+	if err := validateHexAddressForReverseMapping(bzHexAddr); err != nil {
 		return nil, err
 	}
 
-	key := dymnstypes.CoinType60HexAddressToDymNamesIncludeRvlKey(_0xAddress)
+	key := dymnstypes.HexAddressToDymNamesIncludeRvlKey(bzHexAddr)
 
-	currentDymNamesContains0xAddress := k.GenericGetReverseLookupDymNamesRecord(ctx, key)
+	currentDymNamesContainsHexAddress := k.GenericGetReverseLookupDymNamesRecord(ctx, key)
 
 	var dymNames []dymnstypes.DymName
-	for _, name := range currentDymNamesContains0xAddress.DymNames {
+	for _, name := range currentDymNamesContainsHexAddress.DymNames {
 		dymName := k.GetDymNameWithExpirationCheck(ctx, name, nowEpoch)
 		if dymName == nil {
 			// dym-name not found, skip
@@ -168,24 +168,24 @@ func (k Keeper) GetDymNamesContains0xAddress(
 	return dymNames, nil
 }
 
-// RemoveReverseMapping0xAddressToDymName removes reverse mapping
-// from 0x address (coin-type 60, secp256k1, ethereum address)
+// RemoveReverseMappingHexAddressToDymName removes reverse mapping
+// from hex address (coin-type 60, secp256k1, ethereum address)
 // to Dym-Names which contains it from the KVStore.
-func (k Keeper) RemoveReverseMapping0xAddressToDymName(ctx sdk.Context, _0xAddress []byte, name string) error {
-	if err := validate0xAddressForReverseMapping(_0xAddress); err != nil {
+func (k Keeper) RemoveReverseMappingHexAddressToDymName(ctx sdk.Context, bzHexAddr []byte, name string) error {
+	if err := validateHexAddressForReverseMapping(bzHexAddr); err != nil {
 		return err
 	}
 
 	return k.GenericRemoveReverseLookupDymNamesRecord(
 		ctx,
-		dymnstypes.CoinType60HexAddressToDymNamesIncludeRvlKey(_0xAddress),
+		dymnstypes.HexAddressToDymNamesIncludeRvlKey(bzHexAddr),
 		name,
 	)
 }
 
-func validate0xAddressForReverseMapping(_0xAddress []byte) error {
-	if length := len(_0xAddress); length != 20 && length != 32 {
-		return sdkerrors.ErrInvalidRequest.Wrapf("0x address must be 20 or 32 bytes, got %d", length)
+func validateHexAddressForReverseMapping(bzHexAddr []byte) error {
+	if length := len(bzHexAddr); length != 20 && length != 32 {
+		return sdkerrors.ErrInvalidRequest.Wrapf("hex address must be 20 or 32 bytes, got %d", length)
 	}
 	return nil
 }

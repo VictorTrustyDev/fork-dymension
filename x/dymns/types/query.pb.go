@@ -759,7 +759,7 @@ func (m *QueryEstimateRegisterNameResponse) GetTotalPrice() types.Coin {
 
 // QueryReverseResolveAddressRequest is the request type for the Query/ReverseResolveAddress RPC method.
 type QueryReverseResolveAddressRequest struct {
-	// addresses defines the addresses to reverse resolve. Can be both bech32 and 0x addresses.
+	// addresses defines the addresses to reverse resolve. Can be both bech32 and hex addresses.
 	Addresses []string `protobuf:"bytes,1,rep,name=addresses,proto3" json:"addresses,omitempty"`
 }
 

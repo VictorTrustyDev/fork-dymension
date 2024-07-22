@@ -24,7 +24,7 @@ func IsValidBech32AccountAddress(address string, matchAccountAddressBech32Prefix
 
 var pattern0xHex = regexp.MustCompile(`^0x[a-f\d]+$`)
 
-func IsValid0xAddress(address string) bool {
+func IsValidHexAddress(address string) bool {
 	length := len(address)
 	if length != 42 && length != 66 /*32 bytes is interchain account*/ {
 		return false

@@ -125,28 +125,28 @@ func (m DymNameConfig) IsDelete() bool {
 }
 
 func (m *DymName) GetAddressesForReverseMapping(
-	fAddCoinType60HexAddrForChainId func(string) bool,
+	fAddHexAddrForChainId func(string) bool,
 ) (
 	configuredAddressesToConfigs map[string][]DymNameConfig,
-	coinType60HexAddressesToConfigs map[string][]DymNameConfig,
+	hexAddressesToConfigs map[string][]DymNameConfig,
 ) {
 	if err := m.Validate(); err != nil {
 		// should validate before calling this method
 		panic(err)
 	}
 
-	if fAddCoinType60HexAddrForChainId == nil {
-		panic("fAddCoinType60HexAddrForChainId is required")
+	if fAddHexAddrForChainId == nil {
+		panic("fAddHexAddrForChainId is required")
 	}
 
 	configuredAddressesToConfigs = make(map[string][]DymNameConfig)
-	coinType60HexAddressesToConfigs = make(map[string][]DymNameConfig)
+	hexAddressesToConfigs = make(map[string][]DymNameConfig)
 
 	addConfiguredAddress := func(address string, config DymNameConfig) {
 		configuredAddressesToConfigs[address] = append(configuredAddressesToConfigs[address], config)
 	}
 
-	addCoinType60HexAddress := func(accAddr sdk.AccAddress, config DymNameConfig) {
+	addHexAddress := func(accAddr sdk.AccAddress, config DymNameConfig) {
 		var strAddr string
 		if len(accAddr.Bytes()) == 32 { // Interchain Account
 			strAddr = common.BytesToHash(accAddr.Bytes()).String()
@@ -154,7 +154,7 @@ func (m *DymName) GetAddressesForReverseMapping(
 			strAddr = common.BytesToAddress(accAddr.Bytes()).String()
 		}
 		strAddr = strings.ToLower(strAddr)
-		coinType60HexAddressesToConfigs[strAddr] = append(coinType60HexAddressesToConfigs[strAddr], config)
+		hexAddressesToConfigs[strAddr] = append(hexAddressesToConfigs[strAddr], config)
 	}
 
 	var nameConfigs []DymNameConfig
@@ -203,7 +203,7 @@ func (m *DymName) GetAddressesForReverseMapping(
 			}
 
 			addConfiguredAddress(config.Value, config)
-			addCoinType60HexAddress(accAddr, config)
+			addHexAddress(accAddr, config)
 
 			continue
 		}
@@ -219,9 +219,9 @@ func (m *DymName) GetAddressesForReverseMapping(
 
 		// add coin-type 60 hex address for only host chain records or coin-type-60 chain records
 		if config.ChainId == "" {
-			addCoinType60HexAddress(bz, config)
-		} else if fAddCoinType60HexAddrForChainId(config.ChainId) {
-			addCoinType60HexAddress(bz, config)
+			addHexAddress(bz, config)
+		} else if fAddHexAddrForChainId(config.ChainId) {
+			addHexAddress(bz, config)
 		}
 	}
 

@@ -206,8 +206,8 @@ func (q queryServer) ReverseResolveAddress(goCtx context.Context, req *dymnstype
 			}
 
 			addResult(address, candidates)
-		} else if dymnsutils.IsValid0xAddress(address) {
-			candidates, err := q.ReverseResolveDymNameAddressFrom0xAddress(ctx, address)
+		} else if dymnsutils.IsValidHexAddress(address) {
+			candidates, err := q.ReverseResolveDymNameAddressFromHexAddress(ctx, address)
 			if err != nil {
 				addErrorResult(address, err)
 				continue
