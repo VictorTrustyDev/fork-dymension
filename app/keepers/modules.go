@@ -52,6 +52,9 @@ import (
 	ibcclientclient "github.com/cosmos/ibc-go/v7/modules/core/02-client/client"
 	ibcexported "github.com/cosmos/ibc-go/v7/modules/core/exported"
 	ibctm "github.com/cosmos/ibc-go/v7/modules/light-clients/07-tendermint"
+	dymnsmodule "github.com/dymensionxyz/dymension/v3/x/dymns"
+	dymnsmoduleclient "github.com/dymensionxyz/dymension/v3/x/dymns/client"
+	dymnstypes "github.com/dymensionxyz/dymension/v3/x/dymns/types"
 	"github.com/evmos/ethermint/x/evm"
 	evmclient "github.com/evmos/ethermint/x/evm/client"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
@@ -122,6 +125,7 @@ var ModuleBasics = module.NewBasicManager(
 		rollappmoduleclient.SubmitFraudHandler,
 		denommetadatamoduleclient.CreateDenomMetadataHandler,
 		denommetadatamoduleclient.UpdateDenomMetadataHandler,
+		dymnsmoduleclient.MigrateChainIdsProposalHandler,
 		evmclient.UpdateVirtualFrontierBankContractProposalHandler,
 	}),
 	params.AppModuleBasic{},
@@ -141,6 +145,7 @@ var ModuleBasics = module.NewBasicManager(
 	packetforward.AppModuleBasic{},
 	delayedack.AppModuleBasic{},
 	eibc.AppModuleBasic{},
+	dymnsmodule.AppModuleBasic{},
 
 	// Ethermint modules
 	evm.AppModuleBasic{},
@@ -191,6 +196,7 @@ func (a *AppKeepers) SetupModules(
 		delayedackmodule.NewAppModule(appCodec, a.DelayedAckKeeper),
 		denommetadatamodule.NewAppModule(a.DenomMetadataKeeper, *a.EvmKeeper, a.BankKeeper),
 		eibcmodule.NewAppModule(appCodec, a.EIBCKeeper, a.AccountKeeper, a.BankKeeper),
+		dymnsmodule.NewAppModule(appCodec, a.DymNSKeeper),
 
 		// Ethermint app modules
 		evm.NewAppModule(a.EvmKeeper, a.AccountKeeper, a.BankKeeper, a.GetSubspace(evmtypes.ModuleName).WithKeyTable(evmtypes.ParamKeyTable())),
@@ -237,6 +243,7 @@ var maccPerms = map[string][]string{
 	lockuptypes.ModuleName:                             {authtypes.Minter, authtypes.Burner},
 	incentivestypes.ModuleName:                         {authtypes.Minter, authtypes.Burner},
 	txfeestypes.ModuleName:                             {authtypes.Burner},
+	dymnstypes.ModuleName:                              {authtypes.Minter, authtypes.Burner},
 }
 
 var BeginBlockers = []string{
@@ -268,6 +275,7 @@ var BeginBlockers = []string{
 	denommetadatamoduletypes.ModuleName,
 	delayedacktypes.ModuleName,
 	eibcmoduletypes.ModuleName,
+	dymnstypes.ModuleName,
 	lockuptypes.ModuleName,
 	gammtypes.ModuleName,
 	poolmanagertypes.ModuleName,
@@ -304,6 +312,7 @@ var EndBlockers = []string{
 	denommetadatamoduletypes.ModuleName,
 	delayedacktypes.ModuleName,
 	eibcmoduletypes.ModuleName,
+	dymnstypes.ModuleName,
 	epochstypes.ModuleName,
 	lockuptypes.ModuleName,
 	gammtypes.ModuleName,
@@ -341,6 +350,7 @@ var InitGenesis = []string{
 	denommetadatamoduletypes.ModuleName, // must after `x/bank` to trigger hooks
 	delayedacktypes.ModuleName,
 	eibcmoduletypes.ModuleName,
+	dymnstypes.ModuleName,
 	epochstypes.ModuleName,
 	lockuptypes.ModuleName,
 	gammtypes.ModuleName,
