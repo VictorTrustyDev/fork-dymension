@@ -558,6 +558,7 @@ func (a *AppKeepers) SetupHooks() {
 		a.SequencerKeeper.RollappHooks(),
 		a.delayedAckMiddleware,
 		a.StreamerKeeper.Hooks(),
+		a.DymNSKeeper.GetRollAppHooks(),
 	))
 }
 
